@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode, useCallback, useState } from 'react';
 import {
   fetchAllTasks,
+  fetchAllSections,
   createTask as apiCreateTask,
   closeTask as apiCloseTask,
   reopenTask as apiReopenTask,
@@ -25,6 +26,7 @@ export interface Task {
   createdAt: string;
   labels: string[];
   isRecurring: boolean;
+  sectionId: string | null;
 }
 
 interface TaskState {
@@ -47,6 +49,7 @@ interface TaskContextValue {
   tasks: Task[];
   loading: boolean;
   error: string | null;
+  shoppingSectionIds: Set<string>;
   refreshTasks: () => Promise<void>;
   addTask: (task: { title: string; description: string; dueDate: string; priority: Priority }) => Promise<void>;
   toggleTask: (id: string) => void;
@@ -68,6 +71,7 @@ function mapTodoistTask(t: TodoistTask): Task {
     createdAt: t.added_at,
     labels: t.labels || [],
     isRecurring: t.due?.is_recurring || false,
+    sectionId: t.section_id ?? null,
   };
 }
 
@@ -124,11 +128,24 @@ export function TaskProvider({ children }: { children: ReactNode }) {
     loading: true,
     error: null,
   });
+  const [shoppingSectionIds, setShoppingSectionIds] = useState<Set<string>>(new Set());
 
   const loadTasks = useCallback(async () => {
     dispatch({ type: 'SET_LOADING' });
     try {
-      const todoistTasks = await fetchAllTasks();
+      const [todoistTasks, sections] = await Promise.all([
+        fetchAllTasks(),
+        fetchAllSections().catch(() => []),
+      ]);
+
+      // Find all sections whose name contains 'shopping' (case-insensitive)
+      const shoppingIds = new Set(
+        sections
+          .filter((s) => /shopping/i.test(s.name))
+          .map((s) => s.id)
+      );
+      setShoppingSectionIds(shoppingIds);
+
       // Filter out deleted tasks, map to our format
       const mapped = todoistTasks
         .filter((t) => !t.is_deleted)
@@ -212,6 +229,7 @@ export function TaskProvider({ children }: { children: ReactNode }) {
         tasks: state.tasks,
         loading: state.loading,
         error: state.error,
+        shoppingSectionIds,
         refreshTasks: loadTasks,
         addTask,
         toggleTask,

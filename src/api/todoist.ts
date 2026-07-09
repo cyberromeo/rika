@@ -35,10 +35,23 @@ export interface TodoistTask {
   note_count: number;
 }
 
+export interface TodoistSection {
+  id: string;
+  name: string;
+  project_id: string;
+  order: number;
+}
+
 interface TasksResponse {
   results: TodoistTask[];
   next_cursor: string | null;
 }
+
+interface SectionsResponse {
+  results: TodoistSection[];
+  next_cursor: string | null;
+}
+
 
 // ─── API Helpers ─────────────────────────────────────────────────────────────
 
@@ -91,6 +104,20 @@ export async function fetchAllTasks(): Promise<TodoistTask[]> {
   } while (cursor);
 
   return allTasks;
+}
+
+export async function fetchAllSections(): Promise<TodoistSection[]> {
+  const allSections: TodoistSection[] = [];
+  let cursor: string | null = null;
+
+  do {
+    const url = cursor ? `/sections?cursor=${cursor}` : '/sections';
+    const data = await apiGet<SectionsResponse>(url);
+    allSections.push(...data.results);
+    cursor = data.next_cursor;
+  } while (cursor);
+
+  return allSections;
 }
 
 export async function createTask(data: {

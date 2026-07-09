@@ -1,10 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTasks, Task } from '../store/taskStore';
 import TaskItem from '../components/TaskItem';
+import ShoppingCartPanel from '../components/ShoppingCartPanel';
 import { parseISO, isToday, isBefore, startOfDay } from 'date-fns';
 
 export default function TasksPage() {
-  const { tasks, loading, error, refreshTasks } = useTasks();
+  const { tasks, loading, error, refreshTasks, shoppingSectionIds } = useTasks();
+  const [cartOpen, setCartOpen] = useState(false);
 
   const { overdue, today, upcoming, completed } = useMemo(() => {
     const now = startOfDay(new Date());
@@ -19,7 +21,15 @@ export default function TasksPage() {
       return 0;
     };
 
-    tasks.forEach((task) => {
+    // Exclude shopping section tasks from the main list
+    const nonShoppingTasks = tasks.filter((t) => {
+      if (t.sectionId && shoppingSectionIds.size > 0) {
+        return !shoppingSectionIds.has(t.sectionId);
+      }
+      return !t.labels.some((l) => /shopping|grocery|groceries|buy/i.test(l));
+    });
+
+    nonShoppingTasks.forEach((task) => {
       if (task.completed) {
         completed.push(task);
       } else if (!task.dueDate) {
@@ -49,10 +59,20 @@ export default function TasksPage() {
     });
 
     return { overdue, today, upcoming, completed };
-  }, [tasks]);
+  }, [tasks, shoppingSectionIds]);
 
   const totalActive = overdue.length + today.length + upcoming.length;
   const totalDone = completed.length;
+
+  const shoppingCount = tasks.filter((t) => {
+    if (!t.completed) {
+      if (t.sectionId && shoppingSectionIds.size > 0) {
+        return shoppingSectionIds.has(t.sectionId);
+      }
+      return t.labels.some((l) => /shopping|grocery|groceries|buy/i.test(l));
+    }
+    return false;
+  }).length;
 
   if (loading && tasks.length === 0) {
     return (
@@ -90,7 +110,23 @@ export default function TasksPage() {
   return (
     <div className="page-enter">
       <div className="page-header">
-        <h1>Tasks</h1>
+        <div className="page-header-row">
+          <h1>Tasks</h1>
+          <button
+            className={`cart-icon-btn ${shoppingCount > 0 ? 'has-items' : ''}`}
+            onClick={() => setCartOpen(true)}
+            aria-label="Open shopping cart"
+          >
+            <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <path d="M16 10a4 4 0 0 1-8 0" />
+            </svg>
+            {shoppingCount > 0 && (
+              <span className="cart-badge">{shoppingCount}</span>
+            )}
+          </button>
+        </div>
         <div className="subtitle">
           {totalActive} active · {totalDone} completed
         </div>
@@ -170,6 +206,7 @@ export default function TasksPage() {
           )}
         </>
       )}
+      <ShoppingCartPanel isOpen={cartOpen} onClose={() => setCartOpen(false)} />
     </div>
   );
 }
