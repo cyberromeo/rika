@@ -104,7 +104,7 @@ export default function TasksPage({ cartOpen, setCartOpen }: TasksPageProps) {
           <div className="error-icon">⚠️</div>
           <h3>Couldn't load tasks</h3>
           <p>{error}</p>
-          <button className="retry-btn" onClick={refreshTasks}>
+          <button className="retry-btn" onClick={() => { hapticFeedback('light'); refreshTasks(); }}>
             Try Again
           </button>
         </div>

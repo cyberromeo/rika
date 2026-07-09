@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { TaskProvider } from './store/taskStore';
+import HomePage from './pages/HomePage';
 import TasksPage from './pages/TasksPage';
 import CalendarPage from './pages/CalendarPage';
+import FmgePage from './pages/FmgePage';
 import AddTaskModal from './components/AddTaskModal';
 import { hapticFeedback } from './telegram';
 
-type TabId = 'tasks' | 'calendar';
+type TabId = 'home' | 'tasks' | 'calendar' | 'fmge';
 
 function AppContent() {
-  const [activeTab, setActiveTab] = useState<TabId>('tasks');
+  const [activeTab, setActiveTab] = useState<TabId>('home');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalDate, setModalDate] = useState<string | undefined>();
   const [cartOpen, setCartOpen] = useState(false);
@@ -27,15 +29,24 @@ function AppContent() {
     setIsModalOpen(true);
   };
 
+  const renderPage = () => {
+    switch (activeTab) {
+      case 'home':
+        return <HomePage />;
+      case 'tasks':
+        return <TasksPage cartOpen={cartOpen} setCartOpen={setCartOpen} />;
+      case 'calendar':
+        return <CalendarPage onAddTask={openAddModal} />;
+      case 'fmge':
+        return <FmgePage />;
+    }
+  };
+
   return (
     <div className="app-shell">
       {/* Page Content */}
       <div className="page-content">
-        {activeTab === 'tasks' ? (
-          <TasksPage cartOpen={cartOpen} setCartOpen={setCartOpen} />
-        ) : (
-          <CalendarPage onAddTask={openAddModal} />
-        )}
+        {renderPage()}
       </div>
 
       {/* FAB */}
@@ -52,6 +63,20 @@ function AppContent() {
 
       {/* iOS 26 Liquid Glass Tab Bar */}
       <nav className={`bottom-nav ${cartOpen ? 'hidden' : ''}`} role="tablist">
+        <button
+          className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`}
+          onClick={() => handleTabChange('home')}
+          role="tab"
+          aria-selected={activeTab === 'home'}
+          aria-label="Home"
+        >
+          <svg viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          <span>Home</span>
+        </button>
+
         <button
           className={`nav-btn ${activeTab === 'tasks' ? 'active' : ''}`}
           onClick={() => handleTabChange('tasks')}
@@ -80,6 +105,20 @@ function AppContent() {
             <line x1="3" y1="10" x2="21" y2="10" />
           </svg>
           <span>Calendar</span>
+        </button>
+
+        <button
+          className={`nav-btn ${activeTab === 'fmge' ? 'active' : ''}`}
+          onClick={() => handleTabChange('fmge')}
+          role="tab"
+          aria-selected={activeTab === 'fmge'}
+          aria-label="FMGE"
+        >
+          <svg viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+          </svg>
+          <span>FMGE</span>
         </button>
       </nav>
 

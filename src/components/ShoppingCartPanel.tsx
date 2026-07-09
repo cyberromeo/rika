@@ -135,7 +135,7 @@ export default function ShoppingCartPanel({ isOpen, onClose }: ShoppingCartPanel
               <p className="cart-subtitle">{pending.length} item{pending.length !== 1 ? 's' : ''} to get</p>
             </div>
           </div>
-          <button className="cart-close-btn" onClick={onClose} aria-label="Close">
+          <button className="cart-close-btn" onClick={() => { hapticFeedback('light'); onClose(); }} aria-label="Close">
             <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />

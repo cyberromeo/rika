@@ -29,6 +29,7 @@ export default function AddTaskModal({ isOpen, onClose, initialDate }: AddTaskMo
   }, [isOpen, initialDate]);
 
   const handleClose = () => {
+    hapticFeedback('light');
     setIsClosing(true);
     setTimeout(onClose, 250);
   };
