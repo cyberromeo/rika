@@ -11,6 +11,7 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState<TabId>('tasks');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalDate, setModalDate] = useState<string | undefined>();
+  const [cartOpen, setCartOpen] = useState(false);
 
   const handleTabChange = (tab: TabId) => {
     if (tab !== activeTab) {
@@ -31,7 +32,7 @@ function AppContent() {
       {/* Page Content */}
       <div className="page-content">
         {activeTab === 'tasks' ? (
-          <TasksPage />
+          <TasksPage cartOpen={cartOpen} setCartOpen={setCartOpen} />
         ) : (
           <CalendarPage onAddTask={openAddModal} />
         )}
@@ -39,7 +40,7 @@ function AppContent() {
 
       {/* FAB */}
       <button
-        className={`fab ${isModalOpen ? 'open' : ''}`}
+        className={`fab ${isModalOpen ? 'open' : ''} ${cartOpen ? 'hidden' : ''}`}
         onClick={() => openAddModal()}
         aria-label="Add new task"
       >
@@ -50,7 +51,7 @@ function AppContent() {
       </button>
 
       {/* iOS 26 Liquid Glass Tab Bar */}
-      <nav className="bottom-nav" role="tablist">
+      <nav className={`bottom-nav ${cartOpen ? 'hidden' : ''}`} role="tablist">
         <button
           className={`nav-btn ${activeTab === 'tasks' ? 'active' : ''}`}
           onClick={() => handleTabChange('tasks')}

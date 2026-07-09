@@ -1,12 +1,17 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useTasks, Task } from '../store/taskStore';
 import TaskItem from '../components/TaskItem';
 import ShoppingCartPanel from '../components/ShoppingCartPanel';
+import { hapticFeedback } from '../telegram';
 import { parseISO, isToday, isBefore, startOfDay } from 'date-fns';
 
-export default function TasksPage() {
+interface TasksPageProps {
+  cartOpen: boolean;
+  setCartOpen: (open: boolean) => void;
+}
+
+export default function TasksPage({ cartOpen, setCartOpen }: TasksPageProps) {
   const { tasks, loading, error, refreshTasks, shoppingSectionIds } = useTasks();
-  const [cartOpen, setCartOpen] = useState(false);
 
   const { overdue, today, upcoming, completed } = useMemo(() => {
     const now = startOfDay(new Date());
@@ -114,7 +119,7 @@ export default function TasksPage() {
           <h1>Tasks</h1>
           <button
             className={`cart-icon-btn ${shoppingCount > 0 ? 'has-items' : ''}`}
-            onClick={() => setCartOpen(true)}
+            onClick={() => { hapticFeedback('medium'); setCartOpen(true); }}
             aria-label="Open shopping cart"
           >
             <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8">

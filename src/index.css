@@ -301,6 +301,19 @@ input::placeholder, textarea::placeholder {
   }
 }
 
+/* Hide nav & FAB when cart is open */
+.bottom-nav.hidden {
+  transform: translateX(-50%) translateY(calc(100% + 20px));
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fab.hidden {
+  transform: translateY(calc(100% + 40px));
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ─── Section Headers ────────────────────────────────────────────────────── */
 .section-header {
   font-size: 13px;
