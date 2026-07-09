@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { hapticFeedback } from '../telegram';
+import { hapticFeedback, hapticNotification } from '../telegram';
 
 interface Answer {
   answerId: number;
@@ -59,7 +59,7 @@ export default function McqOfTheDay() {
 
   const handleSelect = (ans: Answer) => {
     if (selectedId) return; // Prevent re-selection
-    hapticFeedback(ans.correct ? 'success' : 'error');
+    hapticNotification(ans.correct ? 'success' : 'error');
     setSelectedId(ans.answerId);
   };
 
