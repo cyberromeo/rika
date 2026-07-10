@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { usePower } from '../store/powerStore';
 import { hapticFeedback } from '../telegram';
 import PowerChartOverlay from './PowerChartOverlay';
@@ -9,9 +9,13 @@ function formatKwh(val: number): string {
   return val.toFixed(1);
 }
 
-export default function PowerWidget() {
+interface PowerWidgetProps {
+  chartOpen: boolean;
+  setChartOpen: (open: boolean) => void;
+}
+
+export default function PowerWidget({ chartOpen, setChartOpen }: PowerWidgetProps) {
   const { todayPower, thisWeekPower, thisMonthPower, loading } = usePower();
-  const [chartOpen, setChartOpen] = useState(false);
 
   const handleTap = () => {
     hapticFeedback('light');

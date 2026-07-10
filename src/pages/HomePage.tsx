@@ -1,7 +1,12 @@
 import React from 'react';
 import PowerWidget from '../components/PowerWidget';
 
-export default function HomePage() {
+interface HomePageProps {
+  chartOpen: boolean;
+  setChartOpen: (open: boolean) => void;
+}
+
+export default function HomePage({ chartOpen, setChartOpen }: HomePageProps) {
   const greeting = (() => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning, Sri';
@@ -17,7 +22,7 @@ export default function HomePage() {
       </div>
 
       <div className="home-widgets">
-        <PowerWidget />
+        <PowerWidget chartOpen={chartOpen} setChartOpen={setChartOpen} />
       </div>
     </div>
   );

@@ -15,6 +15,7 @@ function AppContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalDate, setModalDate] = useState<string | undefined>();
   const [cartOpen, setCartOpen] = useState(false);
+  const [chartOpen, setChartOpen] = useState(false);
 
   const handleTabChange = (tab: TabId) => {
     if (tab !== activeTab) {
@@ -33,7 +34,7 @@ function AppContent() {
   const renderPage = () => {
     switch (activeTab) {
       case 'home':
-        return <HomePage />;
+        return <HomePage chartOpen={chartOpen} setChartOpen={setChartOpen} />;
       case 'tasks':
         return <TasksPage cartOpen={cartOpen} setCartOpen={setCartOpen} />;
       case 'calendar':
@@ -52,7 +53,7 @@ function AppContent() {
 
       {/* FAB */}
       <button
-        className={`fab ${isModalOpen ? 'open' : ''} ${cartOpen ? 'hidden' : ''}`}
+        className={`fab ${isModalOpen ? 'open' : ''} ${(cartOpen || chartOpen || activeTab !== 'tasks') ? 'hidden' : ''}`}
         onClick={() => openAddModal()}
         aria-label="Add new task"
       >
@@ -63,7 +64,7 @@ function AppContent() {
       </button>
 
       {/* iOS 26 Liquid Glass Tab Bar */}
-      <nav className={`bottom-nav ${cartOpen ? 'hidden' : ''}`} role="tablist">
+      <nav className={`bottom-nav ${(cartOpen || chartOpen) ? 'hidden' : ''}`} role="tablist">
         <button
           className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`}
           onClick={() => handleTabChange('home')}
