@@ -1470,6 +1470,300 @@ input::placeholder, textarea::placeholder {
   color: var(--tg-theme-hint-color);
 }
 
+/* ─── Home Widgets ───────────────────────────────────────────────────────── */
+.home-widgets {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 20px;
+}
+
+/* ─── Power Widget ───────────────────────────────────────────────────────── */
+.power-widget {
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  transition: all var(--transition-spring);
+  cursor: pointer;
+}
+
+.power-widget:active {
+  transform: scale(0.97);
+  background: var(--glass-bg-hover);
+}
+
+.power-widget-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.power-widget-icon {
+  width: 20px;
+  height: 20px;
+  stroke: #ff9f0a;
+  flex-shrink: 0;
+}
+
+.power-widget-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tg-theme-text-color);
+  flex: 1;
+}
+
+.power-widget-chevron {
+  width: 16px;
+  height: 16px;
+  stroke: var(--tg-theme-hint-color);
+  flex-shrink: 0;
+}
+
+.power-widget-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+}
+
+.loading-spinner.small {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+.power-widget-stats {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.power-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.power-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--tg-theme-text-color);
+  line-height: 1.1;
+}
+
+.power-stat-unit {
+  font-size: 11px;
+  font-weight: 500;
+  color: #ff9f0a;
+  letter-spacing: 0.3px;
+}
+
+.power-stat-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tg-theme-hint-color);
+  margin-top: 2px;
+}
+
+.power-stat-divider {
+  width: 1px;
+  background: var(--glass-border);
+  margin: 0 2px;
+}
+
+/* ─── Power Chart Overlay ────────────────────────────────────────────────── */
+.power-chart-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-normal);
+}
+
+.power-chart-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.power-chart-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 85vh;
+  background: #0a0a0a;
+  border-radius: 20px 20px 0 0;
+  transform: translateY(100%);
+  transition: transform var(--transition-ios);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(20px + var(--safe-area-bottom));
+}
+
+.power-chart-panel.open {
+  transform: translateY(0);
+}
+
+.power-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px 12px;
+}
+
+.power-chart-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.power-chart-header-icon {
+  width: 28px;
+  height: 28px;
+  stroke: #ff9f0a;
+}
+
+.power-chart-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  margin: 0;
+  color: var(--tg-theme-text-color);
+}
+
+.power-chart-subtitle {
+  font-size: 13px;
+  margin: 2px 0 0;
+  color: var(--tg-theme-hint-color);
+}
+
+/* Segmented Control */
+.power-chart-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 4px 20px 16px;
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+}
+
+.power-chart-tab {
+  flex: 1;
+  padding: 8px 0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tg-theme-hint-color);
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.power-chart-tab.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--tg-theme-text-color);
+}
+
+.power-chart-tab:active {
+  transform: scale(0.95);
+}
+
+.power-chart-body {
+  padding: 0 16px 16px;
+}
+
+.power-bar-chart-wrapper {
+  position: relative;
+  width: 100%;
+  padding: 10px 0;
+}
+
+.power-bar-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.power-chart-max {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 500;
+}
+
+/* ─── Calendar Power Badge ───────────────────────────────────────────────── */
+.calendar-month-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.calendar-month-power {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ff9f0a;
+  letter-spacing: 0.2px;
+}
+
+.calendar-power-bolt {
+  width: 11px;
+  height: 11px;
+  stroke: #ff9f0a;
+}
+
+.calendar-power-badge {
+  font-size: 8px;
+  font-weight: 600;
+  color: #ff9f0a;
+  margin-top: 2px;
+  line-height: 1;
+  letter-spacing: 0.2px;
+  opacity: 0.8;
+}
+
+.calendar-day.other-month .calendar-power-badge {
+  display: none;
+}
+
+.calendar-day.selected .calendar-power-badge {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ─── Day Detail Power Badge ─────────────────────────────────────────────── */
+.day-power-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 10px;
+  background: rgba(255, 159, 10, 0.12);
+  color: #ff9f0a;
+  margin-left: auto;
+}
+
+.day-power-badge svg {
+  width: 12px;
+  height: 12px;
+  stroke: #ff9f0a;
+}
+
 /* ─── FMGE Page ──────────────────────────────────────────────────────────── */
 .fmge-countdown-container {
   padding: 0 20px 20px;

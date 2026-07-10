@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   startOfMonth,
   endOfMonth,
@@ -13,6 +13,7 @@ import {
   isToday as isTodayFn,
 } from 'date-fns';
 import { useTasks, Priority } from '../store/taskStore';
+import { usePower } from '../store/powerStore';
 import { hapticSelection, hapticFeedback } from '../telegram';
 
 interface CalendarGridProps {
@@ -22,10 +23,22 @@ interface CalendarGridProps {
 
 export default function CalendarGrid({ selectedDate, onSelectDate }: CalendarGridProps) {
   const { tasks } = useTasks();
+  const { getPowerForDate, getPowerForMonth, fetchMonthDailyData } = usePower();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [slideDir, setSlideDir] = useState<'left' | 'right' | ''>('');
 
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  // Fetch power data when the viewed month changes
+  useEffect(() => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth() + 1;
+    fetchMonthDailyData(year, month);
+  }, [currentMonth, fetchMonthDailyData]);
+
+  // Monthly power total for the header
+  const monthPowerStr = format(currentMonth, 'yyyy-MM');
+  const monthPower = getPowerForMonth(monthPowerStr);
 
   // Build task map: date string -> list of priorities
   const taskMap = useMemo(() => {
@@ -86,7 +99,17 @@ export default function CalendarGrid({ selectedDate, onSelectDate }: CalendarGri
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        <span className="calendar-month-label">{format(currentMonth, 'MMMM yyyy')}</span>
+        <div className="calendar-month-group">
+          <span className="calendar-month-label">{format(currentMonth, 'MMMM yyyy')}</span>
+          {monthPower > 0 && (
+            <span className="calendar-month-power">
+              <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="calendar-power-bolt">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+              </svg>
+              {monthPower >= 100 ? monthPower.toFixed(0) : monthPower.toFixed(1)} kWh
+            </span>
+          )}
+        </div>
         <button className="calendar-nav-btn" onClick={goToNextMonth} aria-label="Next month">
           <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
             <polyline points="9 18 15 12 9 6" />
@@ -110,6 +133,7 @@ export default function CalendarGrid({ selectedDate, onSelectDate }: CalendarGri
             const isSelected = isSameDay(day, selectedDate);
             const isToday = isTodayFn(day);
             const dots = getDotsForDate(dateStr);
+            const dayPower = isCurrentMonth ? getPowerForDate(dateStr) : 0;
 
             return (
               <button
@@ -120,11 +144,15 @@ export default function CalendarGrid({ selectedDate, onSelectDate }: CalendarGri
                 onClick={() => handleDayClick(day)}
               >
                 <span className="calendar-day-number">{format(day, 'd')}</span>
-                <div className="calendar-dots">
-                  {dots.map((p, i) => (
-                    <span key={i} className={`calendar-dot ${p}`} />
-                  ))}
-                </div>
+                {dayPower > 0 && isCurrentMonth ? (
+                  <span className="calendar-power-badge">{dayPower.toFixed(1)}</span>
+                ) : dots.length > 0 ? (
+                  <div className="calendar-dots">
+                    {dots.map((p, i) => (
+                      <span key={i} className={`calendar-dot ${p}`} />
+                    ))}
+                  </div>
+                ) : null}
               </button>
             );
           })}

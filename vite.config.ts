@@ -14,6 +14,12 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/todoist/, ''),
         secure: true,
       },
+      '/api/miraie': {
+        target: 'https://app.miraie.in',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/miraie/, ''),
+        secure: true,
+      },
     },
   },
 });

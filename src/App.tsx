@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TaskProvider } from './store/taskStore';
+import { PowerProvider } from './store/powerStore';
 import HomePage from './pages/HomePage';
 import TasksPage from './pages/TasksPage';
 import CalendarPage from './pages/CalendarPage';
@@ -135,7 +136,9 @@ function AppContent() {
 export default function App() {
   return (
     <TaskProvider>
-      <AppContent />
+      <PowerProvider>
+        <AppContent />
+      </PowerProvider>
     </TaskProvider>
   );
 }
