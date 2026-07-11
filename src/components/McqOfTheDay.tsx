@@ -32,10 +32,13 @@ export default function McqOfTheDay() {
             "appId": "mobile",
             "deviceType": "ios",
             "Accept": "application/json, text/plain, */*",
-            "Authorization": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJzcmlzcmlzaDEyMzRAZ21haWwuY29tIiwidGVuYW50SWQiOiI0M0lCTXlpQThEQk0iLCJleHAiOjE3ODY5OTE3NzYsImlhdCI6MTc4MzUzNTc3NiwianRpIjoiOGExODUwODctNzI5NC00OTRjLThiNmQtNTI2MWQ0MjFiZjExIn0.J54F-cUs0VvayRj0AyqVB5uDgf7PJ0dP9QhLbHH5j6dcXnIUU1jG0_qt0aXfDPkLC7M-yQTEQkWZa6xn6cM81w",
+            "Authorization": "Bearer eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJwc3JpaGFyaTIzOEBnbWFpbC5jb20iLCJ0ZW5hbnRJZCI6IjQzSUJNeWlBOERCTSIsImV4cCI6MTc4NzIxNjY2OSwiaWF0IjoxNzgzNzYwNjY5LCJqdGkiOiI5ZmQ5Y2IxOC0wMjIyLTQ5ZTUtOTRhNC1iMjNiYTEzMWI4Y2UifQ.4QSgK5f-VJAfXr5XB6yndFbPo-lhBkEbgbBXp9OobDfejKRJCuuC_IsOKF_tbbiB7sHROgaWJmjT8mCI8rDrIg",
             "appVersion": "1.5.5",
             "tenantId": "43IBMyiA8DBM",
-            "userEmail": "srisrish1234@gmail.com",
+            "userEmail": "psrihari238@gmail.com",
+            "DeviceId": "54B4406E-A891-4769-BB6D-2C714C967ED0",
+            "DeviceInfo": JSON.stringify({"model":"iPhone15,2","osVersion":"27.0","manufacturer":"Apple","platform":"ios"}),
+            "Origin": "capacitor://localhost",
           },
         });
 
