@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import McqOfTheDay from '../components/McqOfTheDay';
 import { hapticFeedback } from '../telegram';
-
 export default function FmgePage() {
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -66,8 +64,6 @@ export default function FmgePage() {
           </div>
         </div>
       </div>
-
-      <McqOfTheDay />
 
       <div className="fmge-content">
         {/* Placeholder sections — ready to be fleshed out */}
