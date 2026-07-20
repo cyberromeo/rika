@@ -1,10 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import './AiUsageWidget.css';
 
+interface UsageStat {
+  status: string;
+  resetInSec: number;
+  usagePercent: number;
+}
+
 interface UsageData {
-  rollingUsage: { status: string; resetInSec: number; usagePercent: number };
-  weeklyUsage: { status: string; resetInSec: number; usagePercent: number };
-  monthlyUsage: { status: string; resetInSec: number; usagePercent: number };
+  rollingUsage?: UsageStat;
+  weeklyUsage?: UsageStat;
+  monthlyUsage?: UsageStat;
+  chatgptUsage?: UsageStat;
 }
 
 export default function AiUsageWidget() {
@@ -13,6 +20,9 @@ export default function AiUsageWidget() {
 
   useEffect(() => {
     const fetchUsage = async () => {
+      const data: UsageData = {};
+      
+      // Fetch OpenCode limits
       try {
         const response = await fetch("/api/opencode/workspace/wrk_01KWYHQ06WTW00CA0RFP7AK07Q/go", {
           method: "GET",
@@ -26,36 +36,53 @@ export default function AiUsageWidget() {
           }
         });
         const text = await response.text();
-        
-        // Extract JSON from the raw HTML response via regex
-        const match = text.match(/rollingUsage:({[^}]+}),weeklyUsage:({[^}]+}),monthlyUsage:({[^}]+})/);
+        const match = text.match(/rollingUsage:[^{]*({[^}]+}),weeklyUsage:[^{]*({[^}]+}),monthlyUsage:[^{]*({[^}]+})/);
         if (match) {
-          // It's not standard JSON (keys unquoted), so we parse it manually or eval safely.
-          // Since it's from a trusted first party we could just construct the object.
           const parseProps = (str: string) => {
             const status = str.match(/status:"([^"]+)"/)?.[1] || "ok";
             const resetInSec = parseInt(str.match(/resetInSec:(\d+)/)?.[1] || "0", 10);
             const usagePercent = parseInt(str.match(/usagePercent:(\d+)/)?.[1] || "0", 10);
             return { status, resetInSec, usagePercent };
           };
-
-          setUsage({
-            rollingUsage: parseProps(match[1]),
-            weeklyUsage: parseProps(match[2]),
-            monthlyUsage: parseProps(match[3]),
-          });
+          data.rollingUsage = parseProps(match[1]);
+          data.weeklyUsage = parseProps(match[2]);
+          data.monthlyUsage = parseProps(match[3]);
         }
       } catch (err) {
-        console.error("Failed to fetch Ai Usage, using fallback data", err);
-        // Fallback mockup data in case of CORS or network error during demo
-        setUsage({
-          rollingUsage: { status: "ok", resetInSec: 13773, usagePercent: 12 },
-          weeklyUsage: { status: "rate-limited", resetInSec: 37964, usagePercent: 100 },
-          monthlyUsage: { status: "ok", resetInSec: 1647924, usagePercent: 57 }
-        });
-      } finally {
-        setLoading(false);
+        console.error("Failed to fetch OpenCode Usage", err);
       }
+
+      // Fetch ChatGPT limits
+      try {
+        const response = await fetch("/api/chatgpt/backend-api/wham/usage", {
+          method: "GET",
+          headers: {
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-Mode": "no-cors",
+            "Sec-Fetch-Dest": "empty",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Accept-Language": "en-US,en;q=0.9",
+          }
+        });
+        const json = await response.json();
+        if (json?.rate_limit?.primary_window) {
+           data.chatgptUsage = {
+             status: json.rate_limit.limit_reached ? 'rate-limited' : 'ok',
+             resetInSec: json.rate_limit.primary_window.reset_after_seconds,
+             usagePercent: json.rate_limit.primary_window.used_percent
+           };
+        }
+      } catch (err) {
+        console.error("Failed to fetch ChatGPT Usage", err);
+      }
+
+      // Set state if we got anything, otherwise null to show error
+      if (Object.keys(data).length > 0) {
+        setUsage(data);
+      } else {
+        setUsage(null);
+      }
+      setLoading(false);
     };
 
     fetchUsage();
@@ -68,7 +95,8 @@ export default function AiUsageWidget() {
     return `${seconds}s`;
   };
 
-  const renderProgress = (label: string, data: { status: string; resetInSec: number; usagePercent: number }) => {
+  const renderProgress = (label: string, data?: UsageStat) => {
+    if (!data) return null;
     const isRateLimited = data.status === 'rate-limited' || data.usagePercent >= 100;
     const progressColor = isRateLimited ? 'var(--priority-p1)' : (data.usagePercent > 80 ? 'var(--priority-p2)' : 'var(--tg-theme-button-color)');
     
@@ -110,9 +138,10 @@ export default function AiUsageWidget() {
           </div>
         ) : usage ? (
           <div className="usage-list">
-            {renderProgress("5 Hr Limit", usage.rollingUsage)}
-            {renderProgress("Weekly Limit", usage.weeklyUsage)}
-            {renderProgress("Monthly Limit", usage.monthlyUsage)}
+            {renderProgress("OpenCode 5Hr", usage.rollingUsage)}
+            {renderProgress("OpenCode Weekly", usage.weeklyUsage)}
+            {renderProgress("OpenCode Monthly", usage.monthlyUsage)}
+            {renderProgress("ChatGPT Plus", usage.chatgptUsage)}
           </div>
         ) : (
           <div className="usage-error">Could not load usage data.</div>
