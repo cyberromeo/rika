@@ -14,7 +14,7 @@ export default function AiUsageWidget() {
   useEffect(() => {
     const fetchUsage = async () => {
       try {
-        const response = await fetch("https://opencode.ai/workspace/wrk_01KWYHQ06WTW00CA0RFP7AK07Q/go", {
+        const response = await fetch("/api/opencode/workspace/wrk_01KWYHQ06WTW00CA0RFP7AK07Q/go", {
           method: "GET",
           headers: {
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -22,7 +22,6 @@ export default function AiUsageWidget() {
             "Priority": "u=0, i",
             "Sec-Fetch-Mode": "navigate",
             "Accept-Language": "en-IN,en;q=0.9",
-            "Referer": "https://accounts.google.com/",
             "Sec-Fetch-Dest": "document",
           }
         });
