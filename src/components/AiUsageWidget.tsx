@@ -14,60 +14,97 @@ interface UsageData {
   chatgptUsage?: UsageStat;
 }
 
+function parseOpenCodeUsage(text: string): Pick<UsageData, 'rollingUsage' | 'weeklyUsage' | 'monthlyUsage'> | null {
+  const match = text.match(/rollingUsage:[^{]*({[^}]+}),weeklyUsage:[^{]*({[^}]+}),monthlyUsage:[^{]*({[^}]+})/);
+  if (!match) return null;
+
+  const parseProps = (str: string): UsageStat => {
+    const status = str.match(/status:"([^"]+)"/)?.[1] || 'ok';
+    const resetInSec = parseInt(str.match(/resetInSec:(\d+)/)?.[1] || '0', 10);
+    const usagePercent = parseInt(str.match(/usagePercent:(\d+)/)?.[1] || '0', 10);
+    return { status, resetInSec, usagePercent };
+  };
+
+  return {
+    rollingUsage: parseProps(match[1]),
+    weeklyUsage: parseProps(match[2]),
+    monthlyUsage: parseProps(match[3]),
+  };
+}
+
+function hasUsageData(data: UsageData): boolean {
+  return Boolean(
+    data.rollingUsage ||
+    data.weeklyUsage ||
+    data.monthlyUsage ||
+    data.chatgptUsage
+  );
+}
+
 export default function AiUsageWidget() {
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchUsage = async () => {
-      const data: UsageData = {};
-      
-      // Fetch OpenCode limits
       try {
-        const response = await fetch("/api/opencode/workspace/wrk_01KWYHQ06WTW00CA0RFP7AK07Q/go", {
-          method: "GET"
-        });
-        const text = await response.text();
-        const match = text.match(/rollingUsage:[^{]*({[^}]+}),weeklyUsage:[^{]*({[^}]+}),monthlyUsage:[^{]*({[^}]+})/);
-        if (match) {
-          const parseProps = (str: string) => {
-            const status = str.match(/status:"([^"]+)"/)?.[1] || "ok";
-            const resetInSec = parseInt(str.match(/resetInSec:(\d+)/)?.[1] || "0", 10);
-            const usagePercent = parseInt(str.match(/usagePercent:(\d+)/)?.[1] || "0", 10);
-            return { status, resetInSec, usagePercent };
-          };
-          data.rollingUsage = parseProps(match[1]);
-          data.weeklyUsage = parseProps(match[2]);
-          data.monthlyUsage = parseProps(match[3]);
+        if (import.meta.env.DEV) {
+          const data: UsageData = {};
+
+          try {
+            const response = await fetch('/api/opencode/workspace/wrk_01KWYHQ06WTW00CA0RFP7AK07Q/go', {
+              method: 'GET'
+            });
+            const text = await response.text();
+            const parsed = parseOpenCodeUsage(text);
+            if (parsed) {
+              Object.assign(data, parsed);
+            }
+          } catch (err) {
+            console.error('Failed to fetch OpenCode Usage', err);
+          }
+
+          try {
+            const response = await fetch('/api/chatgpt/backend-api/wham/usage', {
+              method: 'GET'
+            });
+            const json = await response.json();
+            if (json?.rate_limit?.primary_window) {
+              data.chatgptUsage = {
+                status: json.rate_limit.limit_reached ? 'rate-limited' : 'ok',
+                resetInSec: json.rate_limit.primary_window.reset_after_seconds,
+                usagePercent: json.rate_limit.primary_window.used_percent
+              };
+            }
+          } catch (err) {
+            console.error('Failed to fetch ChatGPT Usage', err);
+          }
+
+          setUsage(hasUsageData(data) ? data : null);
+          return;
+        }
+
+        const response = await fetch('/api/ai-usage', { method: 'GET' });
+        if (!response.ok) {
+          throw new Error(`AI usage API failed with ${response.status}`);
+        }
+
+        const data = await response.json() as UsageData & { errors?: string[] };
+        if (data.errors?.length) {
+          console.warn('AI usage partially loaded', data.errors);
+        }
+
+        if (hasUsageData(data)) {
+          setUsage(data);
+        } else {
+          setUsage(null);
         }
       } catch (err) {
-        console.error("Failed to fetch OpenCode Usage", err);
-      }
-
-      // Fetch ChatGPT limits
-      try {
-        const response = await fetch("/api/chatgpt/backend-api/wham/usage", {
-          method: "GET"
-        });
-        const json = await response.json();
-        if (json?.rate_limit?.primary_window) {
-           data.chatgptUsage = {
-             status: json.rate_limit.limit_reached ? 'rate-limited' : 'ok',
-             resetInSec: json.rate_limit.primary_window.reset_after_seconds,
-             usagePercent: json.rate_limit.primary_window.used_percent
-           };
-        }
-      } catch (err) {
-        console.error("Failed to fetch ChatGPT Usage", err);
-      }
-
-      // Set state if we got anything, otherwise null to show error
-      if (Object.keys(data).length > 0) {
-        setUsage(data);
-      } else {
+        console.error('Failed to fetch AI usage', err);
         setUsage(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchUsage();
