@@ -25,15 +25,7 @@ export default function AiUsageWidget() {
       // Fetch OpenCode limits
       try {
         const response = await fetch("/api/opencode/workspace/wrk_01KWYHQ06WTW00CA0RFP7AK07Q/go", {
-          method: "GET",
-          headers: {
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Sec-Fetch-Site": "none",
-            "Priority": "u=0, i",
-            "Sec-Fetch-Mode": "navigate",
-            "Accept-Language": "en-IN,en;q=0.9",
-            "Sec-Fetch-Dest": "document",
-          }
+          method: "GET"
         });
         const text = await response.text();
         const match = text.match(/rollingUsage:[^{]*({[^}]+}),weeklyUsage:[^{]*({[^}]+}),monthlyUsage:[^{]*({[^}]+})/);
@@ -55,14 +47,7 @@ export default function AiUsageWidget() {
       // Fetch ChatGPT limits
       try {
         const response = await fetch("/api/chatgpt/backend-api/wham/usage", {
-          method: "GET",
-          headers: {
-            "Sec-Fetch-Site": "none",
-            "Sec-Fetch-Mode": "no-cors",
-            "Sec-Fetch-Dest": "empty",
-            "Accept-Encoding": "gzip, deflate, br, zstd",
-            "Accept-Language": "en-US,en;q=0.9",
-          }
+          method: "GET"
         });
         const json = await response.json();
         if (json?.rate_limit?.primary_window) {

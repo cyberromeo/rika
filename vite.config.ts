@@ -45,6 +45,8 @@ export default defineConfig({
           "originator": "Codex Desktop",
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36",
           "Cookie": "__cflb=0H28vzvP5FJafnkHxihKb44bdy6fTJD3TaqWTyNP4Xd; __cf_bm=8r7fGgGP2VSBXPwWy147Ih6oERWQnSmsA7B75d1wHJ4-1784518058.5259674-1.0.1.1-d_XbfCnbTorUjiA4q0ejHfws_f6H3yRsvqeEf1F3UI2m5mHX2zV34sE4gjFJC_klC_y4wAjLG2qW_My3hFFXu4WCSBSSUT2DbMXTtXubzS6TKV2WkdCY4CuzCYXE1ogt; _cfuvid=W9UmfL7ROcpwzQXdAmRa7FZroGXGPYuTRY6_Gi64GhM-1784518060.054144-1.0.1.1-sinLQAQUERWl5P9L5Fgk3TlAxV8Uug7JhKMIcjCwRjs",
+          "Origin": "https://chatgpt.com",
+          "Referer": "https://chatgpt.com/"
         }
       },
     },
