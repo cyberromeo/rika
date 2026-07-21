@@ -2,7 +2,7 @@ import { db } from '../lib/firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 const TRACKER_COL = 'user_tracker';
-const USER_ID = 'NpFFvozZSFWnCKdmutkISEGPf8o2';
+const USER_ID = import.meta.env.VITE_FIREBASE_USER_ID;
 
 export const SUBJECTS_LIST = [
   'Anatomy', 'Physiology', 'Biochemistry', 'Pathology',

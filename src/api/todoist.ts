@@ -4,7 +4,7 @@
 // In dev, requests go through Vite proxy to avoid CORS; in prod, direct to API
 const isDev = import.meta.env.DEV;
 const API_BASE = isDev ? '/api/todoist/api/v1' : 'https://api.todoist.com/api/v1';
-const API_TOKEN = '1a3f2d0c74b55c9503e88a2b5c6221485fc32c1b';
+const API_TOKEN = import.meta.env.VITE_TODOIST_API_TOKEN;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

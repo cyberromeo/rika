@@ -5,8 +5,8 @@ const isDev = import.meta.env.DEV;
 const API_BASE = isDev
   ? '/api/miraie/simplifi/v1'
   : 'https://app.miraie.in/simplifi/v1';
-const DEVICE_ID = '36ff8e5467b2';
-const AUTH_TOKEN = '5627234a-129e-46be-b318-240d06871671';
+const DEVICE_ID = import.meta.env.VITE_MIRAIE_DEVICE_ID;
+const AUTH_TOKEN = import.meta.env.VITE_MIRAIE_AUTH_TOKEN;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
