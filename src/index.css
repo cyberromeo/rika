@@ -61,7 +61,6 @@
   background-color: var(--tg-theme-bg-color);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: 'ss01' on, 'cv01' on;
 }
 
 /* ─── Reset & Base ───────────────────────────────────────────────────────── */
@@ -164,7 +163,7 @@ input::placeholder, textarea::placeholder {
 .page-header h1 {
   font-size: 34px;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.3px;
   color: var(--tg-theme-text-color);
   background: linear-gradient(135deg, #ffffff 0%, #a0a0a5 100%);
   -webkit-background-clip: text;
