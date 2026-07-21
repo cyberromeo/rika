@@ -41,6 +41,13 @@ function hasUsageData(data: UsageData): boolean {
   );
 }
 
+function severityFor(stat?: UsageStat): 'ok' | 'warn' | 'critical' {
+  if (!stat) return 'ok';
+  if (stat.status === 'rate-limited' || stat.usagePercent >= 100) return 'critical';
+  if (stat.usagePercent > 80) return 'warn';
+  return 'ok';
+}
+
 export default function AiUsageWidget() {
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -117,56 +124,122 @@ export default function AiUsageWidget() {
     return `${seconds}s`;
   };
 
-  const renderProgress = (label: string, data?: UsageStat) => {
-    if (!data) return null;
-    const isRateLimited = data.status === 'rate-limited' || data.usagePercent >= 100;
-    const progressColor = isRateLimited ? 'var(--priority-p1)' : (data.usagePercent > 80 ? 'var(--priority-p2)' : 'var(--tg-theme-button-color)');
-    
+  const allStats: UsageStat[] = [usage?.rollingUsage, usage?.weeklyUsage, usage?.monthlyUsage, usage?.chatgptUsage].filter(Boolean) as UsageStat[];
+  const maxUsage = allStats.length ? Math.max(...allStats.map(s => s.usagePercent)) : 0;
+  const hasCritical = allStats.some(s => severityFor(s) === 'critical');
+  const hasWarn = allStats.some(s => severityFor(s) === 'warn');
+  const overallStatus: 'ok' | 'warn' | 'critical' = hasCritical ? 'critical' : hasWarn ? 'warn' : 'ok';
+  const overallLabel = overallStatus === 'critical' ? 'Limited' : overallStatus === 'warn' ? 'High' : 'Healthy';
+
+  const renderStat = (stat?: UsageStat) => {
+    if (!stat) return null;
+    const severity = severityFor(stat);
     return (
-      <div className="usage-item" key={label}>
-        <div className="usage-header">
-          <div className="usage-label-group">
-            <span className="usage-label">{label}</span>
-            <span className="usage-reset">Resets in {formatTime(data.resetInSec)}</span>
+      <span className={`usage-pill ${severity}`}>
+        <span className="usage-pill-dot" />
+        {stat.usagePercent}%
+      </span>
+    );
+  };
+
+  const renderRow = (label: string, data?: UsageStat) => {
+    if (!data) return null;
+    const severity = severityFor(data);
+    return (
+      <div className={`usage-row ${severity}`} key={label}>
+        <div className="usage-row-top">
+          <div className="usage-row-label">
+            <span className="usage-row-name">{label}</span>
           </div>
-          <span className="usage-stats" style={{ color: isRateLimited ? 'var(--priority-p1)' : 'var(--tg-theme-text-color)' }}>
-            {data.usagePercent}%
-          </span>
+          {renderStat(data)}
         </div>
-        <div className="usage-bar-bg">
-          <div 
-            className={`usage-bar-fill ${isRateLimited ? 'pulse-alert' : ''}`} 
-            style={{ width: `${Math.min(data.usagePercent, 100)}%`, background: progressColor }}
+        <div className="usage-track">
+          <div
+            className={`usage-fill ${severity === 'critical' ? 'pulse-alert' : ''}`}
+            style={{ width: `${Math.min(data.usagePercent, 100)}%` }}
           />
+        </div>
+        <div className="usage-row-bottom">
+          <span className="usage-reset-text">Resets in {formatTime(data.resetInSec)}</span>
         </div>
       </div>
     );
   };
 
+  const hasOpenCode = usage?.rollingUsage || usage?.weeklyUsage || usage?.monthlyUsage;
+  const hasChatGPT = Boolean(usage?.chatgptUsage);
+
   return (
     <div className="ai-usage-widget">
       <div className="widget-header">
-        <svg className="widget-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-        </svg>
-        <h2>Your Ai usage</h2>
+        <div className="widget-header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
+        </div>
+        <div className="widget-header-text">
+          <h2>AI Usage</h2>
+          <span className="widget-header-sub">Live rate limits</span>
+        </div>
+        <div className={`widget-status-badge ${overallStatus}`}>
+          <span className="status-dot" />
+          {overallLabel}
+        </div>
       </div>
 
       <div className="widget-content">
         {loading ? (
           <div className="usage-loading">
-            <div className="loading-spinner"></div>
-            <p>Syncing data...</p>
+            <div className="loading-spinner" />
+            <p>Syncing data…</p>
           </div>
         ) : usage ? (
-          <div className="usage-list">
-            {renderProgress("OpenCode 5Hr", usage.rollingUsage)}
-            {renderProgress("OpenCode Weekly", usage.weeklyUsage)}
-            {renderProgress("OpenCode Monthly", usage.monthlyUsage)}
-            {renderProgress("ChatGPT Plus", usage.chatgptUsage)}
+          <div className="usage-body">
+            {hasOpenCode && (
+              <div className="usage-group">
+                <div className="usage-group-head">
+                  <span className="usage-group-icon opencode">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="16 18 22 12 16 6" />
+                      <polyline points="8 6 2 12 8 18" />
+                    </svg>
+                  </span>
+                  <span className="usage-group-name">OpenCode</span>
+                  <span className="usage-group-peak">{maxUsage}% peak</span>
+                </div>
+                <div className="usage-rows">
+                  {renderRow("5Hr Rolling", usage.rollingUsage)}
+                  {renderRow("Weekly", usage.weeklyUsage)}
+                  {renderRow("Monthly", usage.monthlyUsage)}
+                </div>
+              </div>
+            )}
+
+            {hasChatGPT && (
+              <div className="usage-group">
+                <div className="usage-group-head">
+                  <span className="usage-group-icon chatgpt">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2a4 4 0 0 1 4 4 4 4 0 0 1 1 1 4 4 0 0 1 1 7 4 4 0 0 1-1 1 4 4 0 0 1-4 4 4 4 0 0 1-1-1 4 4 0 0 1-1 1 4 4 0 0 1-4-4 4 4 0 0 1-1-1 4 4 0 0 1 1-7 4 4 0 0 1 1-1 4 4 0 0 1 4-4z" />
+                    </svg>
+                  </span>
+                  <span className="usage-group-name">ChatGPT Plus</span>
+                </div>
+                <div className="usage-rows">
+                  {renderRow("Primary Window", usage.chatgptUsage)}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="usage-error">Could not load usage data.</div>
+          <div className="usage-error">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <p>Could not load usage data.</p>
+          </div>
         )}
       </div>
     </div>
