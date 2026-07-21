@@ -22,9 +22,23 @@ export default function PowerWidget({ chartOpen, setChartOpen }: PowerWidgetProp
     setChartOpen(true);
   };
 
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleTap();
+    }
+  };
+
   return (
     <>
-      <div className="power-widget" onClick={handleTap}>
+      <div
+        className="power-widget"
+        onClick={handleTap}
+        onKeyDown={handleKey}
+        role="button"
+        tabIndex={0}
+        aria-label={`AC power usage. Today ${formatKwh(todayPower)} kWh. Open chart.`}
+      >
         <div className="power-widget-header">
           <svg className="power-widget-icon" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
@@ -41,7 +55,7 @@ export default function PowerWidget({ chartOpen, setChartOpen }: PowerWidgetProp
           </div>
         ) : (
           <div className="power-widget-stats">
-            <div className="power-stat">
+            <div className="power-stat primary">
               <span className="power-stat-value">{formatKwh(todayPower)}</span>
               <span className="power-stat-unit">kWh</span>
               <span className="power-stat-label">Today</span>

@@ -74,8 +74,22 @@ export default function FmgeProgressWidget({ onNavigate }: FmgeProgressWidgetPro
     onNavigate?.();
   };
 
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleTap();
+    }
+  };
+
   return (
-    <div className="fmge-widget" onClick={handleTap}>
+    <div
+      className="fmge-widget"
+      onClick={handleTap}
+      onKeyDown={handleKey}
+      role="button"
+      tabIndex={0}
+      aria-label={`FMGE prep ${progress}% complete. Open tracker.`}
+    >
       <div className="fmge-widget-head">
         <div className="fmge-widget-head-left">
           <svg className="fmge-widget-icon" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8">
@@ -111,38 +125,40 @@ export default function FmgeProgressWidget({ onNavigate }: FmgeProgressWidgetPro
             </div>
           </div>
 
-          <div className="fmge-widget-stats">
-            <div className="fmge-widget-stat">
-              <span className="fmge-widget-stat-num">{completedSubjects}</span>
-              <span className="fmge-widget-stat-lbl">Subjects</span>
+          <div className="fmge-widget-info">
+            <div className="fmge-widget-stats">
+              <div className="fmge-widget-stat">
+                <span className="fmge-widget-stat-num">{completedSubjects}<span className="fmge-widget-stat-sub">/{SUBJECTS_LIST.length}</span></span>
+                <span className="fmge-widget-stat-lbl">Subjects</span>
+              </div>
+              <div className="fmge-widget-stat-divider" />
+              <div className="fmge-widget-stat">
+                <span className="fmge-widget-stat-num">{completedGTs}<span className="fmge-widget-stat-sub">/7</span></span>
+                <span className="fmge-widget-stat-lbl">Grand Tests</span>
+              </div>
+              <div className="fmge-widget-stat-divider" />
+              <div className="fmge-widget-stat">
+                <span className="fmge-widget-stat-num">{completedItems}<span className="fmge-widget-stat-sub">/{TOTAL_ITEMS}</span></span>
+                <span className="fmge-widget-stat-lbl">Items</span>
+              </div>
             </div>
-            <div className="fmge-widget-stat-divider" />
-            <div className="fmge-widget-stat">
-              <span className="fmge-widget-stat-num">{completedGTs}<span className="fmge-widget-stat-sub">/7</span></span>
-              <span className="fmge-widget-stat-lbl">Grand Tests</span>
-            </div>
-            <div className="fmge-widget-stat-divider" />
-            <div className="fmge-widget-stat">
-              <span className="fmge-widget-stat-num">{completedItems}<span className="fmge-widget-stat-sub">/{TOTAL_ITEMS}</span></span>
-              <span className="fmge-widget-stat-lbl">Items</span>
-            </div>
-          </div>
 
-          <div className="fmge-widget-bar">
-            <div className="fmge-widget-bar-fill" style={{ width: `${progress}%` }} />
-          </div>
-
-          <div className="fmge-widget-foot">
-            <span className="fmge-widget-status">{statusLabel}</span>
-            <span className="fmge-widget-cta">
-              Open tracker
-              <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-            </span>
+            <div className="fmge-widget-bar">
+              <div className="fmge-widget-bar-fill" style={{ width: `${progress}%` }} />
+            </div>
           </div>
         </div>
       )}
+
+      <div className="fmge-widget-foot">
+        <span className="fmge-widget-status">{statusLabel}</span>
+        <span className="fmge-widget-cta">
+          Open tracker
+          <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </span>
+      </div>
     </div>
   );
 }

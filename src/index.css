@@ -1484,13 +1484,24 @@ input::placeholder, textarea::placeholder {
   border-radius: var(--radius-lg);
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
-  transition: all var(--transition-spring);
+  transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
   cursor: pointer;
+  outline: none;
+}
+
+.power-widget:hover {
+  border-color: rgba(255, 159, 10, 0.25);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 159, 10, 0.06);
 }
 
 .power-widget:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
   background: var(--glass-bg-hover);
+}
+
+.power-widget:focus-visible {
+  border-color: rgba(255, 159, 10, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 159, 10, 0.2);
 }
 
 .power-widget-header {
@@ -1512,6 +1523,7 @@ input::placeholder, textarea::placeholder {
   font-weight: 600;
   color: var(--tg-theme-text-color);
   flex: 1;
+  letter-spacing: -0.2px;
 }
 
 .power-widget-chevron {
@@ -1519,6 +1531,13 @@ input::placeholder, textarea::placeholder {
   height: 16px;
   stroke: var(--tg-theme-hint-color);
   flex-shrink: 0;
+  transition: transform var(--transition-fast), stroke var(--transition-fast);
+}
+
+.power-widget:hover .power-widget-chevron,
+.power-widget:active .power-widget-chevron {
+  transform: translateX(2px);
+  stroke: #ff9f0a;
 }
 
 .power-widget-loading {
@@ -1556,6 +1575,10 @@ input::placeholder, textarea::placeholder {
   line-height: 1.1;
 }
 
+.power-stat.primary .power-stat-value {
+  color: #ff9f0a;
+}
+
 .power-stat-unit {
   font-size: 11px;
   font-weight: 500;
@@ -1563,11 +1586,20 @@ input::placeholder, textarea::placeholder {
   letter-spacing: 0.3px;
 }
 
+.power-stat.primary .power-stat-unit {
+  opacity: 1;
+}
+
 .power-stat-label {
   font-size: 11px;
   font-weight: 500;
   color: var(--tg-theme-hint-color);
   margin-top: 2px;
+}
+
+.power-stat.primary .power-stat-label {
+  color: #ff9f0a;
+  font-weight: 600;
 }
 
 .power-stat-divider {
@@ -1956,16 +1988,17 @@ input::placeholder, textarea::placeholder {
 /* ─── FMGE Progress Widget (Home, redesigned) ─────────────────────────────── */
 .fmge-widget {
   position: relative;
-  padding: 14px 16px 16px;
+  padding: 14px 16px 14px;
   border-radius: var(--radius-lg);
   background:
     linear-gradient(135deg, rgba(48, 209, 88, 0.07) 0%, rgba(10, 132, 255, 0.04) 60%, rgba(255, 255, 255, 0.02) 100%);
   border: 1px solid var(--glass-border);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-  transition: all var(--transition-spring);
+  transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
   cursor: pointer;
   overflow: hidden;
   animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  outline: none;
 }
 
 .fmge-widget::after {
@@ -1980,10 +2013,20 @@ input::placeholder, textarea::placeholder {
   z-index: 0;
 }
 
+.fmge-widget:hover {
+  border-color: rgba(48, 209, 88, 0.25);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(48, 209, 88, 0.08);
+}
+
 .fmge-widget:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
   background:
     linear-gradient(135deg, rgba(48, 209, 88, 0.1) 0%, rgba(10, 132, 255, 0.06) 60%, rgba(255, 255, 255, 0.03) 100%);
+}
+
+.fmge-widget:focus-visible {
+  border-color: rgba(48, 209, 88, 0.5);
+  box-shadow: 0 0 0 3px rgba(48, 209, 88, 0.2);
 }
 
 /* Header */
@@ -2010,11 +2053,10 @@ input::placeholder, textarea::placeholder {
 }
 
 .fmge-widget-title {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 600;
   color: var(--tg-theme-text-color);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: -0.2px;
 }
 
 .fmge-widget-days {
@@ -2048,8 +2090,8 @@ input::placeholder, textarea::placeholder {
 /* Body */
 .fmge-widget-body {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  gap: 14px;
   position: relative;
   z-index: 1;
 }
@@ -2064,10 +2106,9 @@ input::placeholder, textarea::placeholder {
 /* Ring */
 .fmge-widget-ring {
   position: relative;
-  width: 84px;
-  height: 84px;
+  width: 76px;
+  height: 76px;
   flex-shrink: 0;
-  margin: -2px auto 2px;
 }
 
 .fmge-widget-ring-svg {
@@ -2102,7 +2143,7 @@ input::placeholder, textarea::placeholder {
 }
 
 .fmge-widget-ring-num {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
   color: var(--tg-theme-text-color);
   letter-spacing: -0.5px;
@@ -2110,11 +2151,20 @@ input::placeholder, textarea::placeholder {
 }
 
 .fmge-widget-ring-pct-sign {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--tg-theme-hint-color);
   align-self: flex-start;
-  margin-top: 4px;
+  margin-top: 3px;
+}
+
+/* Info column (right of ring) */
+.fmge-widget-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 /* Stats row */
@@ -2122,10 +2172,6 @@ input::placeholder, textarea::placeholder {
   display: flex;
   align-items: stretch;
   gap: 0;
-  padding: 10px 4px;
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid var(--glass-border);
 }
 
 .fmge-widget-stat {
@@ -2189,6 +2235,11 @@ input::placeholder, textarea::placeholder {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--glass-border);
+  position: relative;
+  z-index: 1;
 }
 
 .fmge-widget-status {
@@ -2201,19 +2252,24 @@ input::placeholder, textarea::placeholder {
 .fmge-widget-cta {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  font-size: 11px;
+  gap: 3px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--tg-theme-hint-color);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+  color: #30d158;
+  letter-spacing: -0.1px;
 }
 
 .fmge-widget-cta svg {
-  width: 12px;
-  height: 12px;
-  stroke: var(--tg-theme-hint-color);
+  width: 13px;
+  height: 13px;
+  stroke: #30d158;
   flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.fmge-widget:active .fmge-widget-cta svg,
+.fmge-widget:hover .fmge-widget-cta svg {
+  transform: translateX(2px);
 }
 
 /* ─── FMGE Segmented Control ────────────────────────────────────────────── */

@@ -34,7 +34,13 @@ function AppContent() {
   const renderPage = () => {
     switch (activeTab) {
       case 'home':
-        return <HomePage chartOpen={chartOpen} setChartOpen={setChartOpen} />;
+        return (
+          <HomePage
+            chartOpen={chartOpen}
+            setChartOpen={setChartOpen}
+            onNavigateFmge={() => handleTabChange('fmge')}
+          />
+        );
       case 'tasks':
         return <TasksPage cartOpen={cartOpen} setCartOpen={setCartOpen} />;
       case 'calendar':
