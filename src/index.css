@@ -2062,11 +2062,11 @@ input::placeholder, textarea::placeholder {
   display: inline-flex;
   align-items: baseline;
   gap: 4px;
-  padding: 4px 10px;
+  padding: 5px 10px;
   border-radius: var(--radius-xl);
   background: rgba(255, 159, 10, 0.12);
   border: 1px solid rgba(255, 159, 10, 0.25);
-  line-height: 1;
+  line-height: 1.2;
 }
 
 .fmge-widget-days-num {
@@ -2135,9 +2135,9 @@ input::placeholder, textarea::placeholder {
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: center;
-  gap: 1px;
+  gap: 0;
   font-variant-numeric: tabular-nums;
 }
 
@@ -2145,16 +2145,14 @@ input::placeholder, textarea::placeholder {
   font-size: 20px;
   font-weight: 700;
   color: var(--tg-theme-text-color);
-  letter-spacing: -0.5px;
+  letter-spacing: -0.2px;
   line-height: 1;
 }
 
 .fmge-widget-ring-pct-sign {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--tg-theme-hint-color);
-  align-self: flex-start;
-  margin-top: 3px;
 }
 
 /* Info column (right of ring) */
@@ -2169,7 +2167,7 @@ input::placeholder, textarea::placeholder {
 /* Stats row */
 .fmge-widget-stats {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 0;
 }
 
@@ -2180,6 +2178,7 @@ input::placeholder, textarea::placeholder {
   align-items: center;
   gap: 2px;
   padding: 0 4px;
+  justify-content: flex-start;
 }
 
 .fmge-widget-stat-num {
@@ -2187,8 +2186,8 @@ input::placeholder, textarea::placeholder {
   font-weight: 700;
   color: var(--tg-theme-text-color);
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.3px;
-  line-height: 1.1;
+  letter-spacing: -0.2px;
+  line-height: 1.2;
 }
 
 .fmge-widget-stat-sub {
@@ -2203,14 +2202,15 @@ input::placeholder, textarea::placeholder {
   font-weight: 600;
   color: var(--tg-theme-hint-color);
   text-transform: uppercase;
-  letter-spacing: 0.4px;
-  margin-top: 1px;
+  letter-spacing: 0.3px;
+  line-height: 1;
 }
 
 .fmge-widget-stat-divider {
   width: 1px;
+  min-height: 28px;
   background: var(--glass-border);
-  margin: 4px 0;
+  align-self: stretch;
 }
 
 /* Bar */
