@@ -1953,6 +1953,353 @@ input::placeholder, textarea::placeholder {
   padding-left: 20px;
 }
 
+/* ─── FMGE Progress Widget (Home) ───────────────────────────────────────── */
+.fmge-progress-widget {
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  transition: all var(--transition-spring);
+  cursor: pointer;
+}
+
+.fmge-progress-widget:active {
+  transform: scale(0.97);
+  background: var(--glass-bg-hover);
+}
+
+.fmge-progress-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.fmge-progress-header svg:first-child {
+  width: 20px;
+  height: 20px;
+  stroke: #30d158;
+  flex-shrink: 0;
+}
+
+.fmge-progress-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--tg-theme-text-color);
+  flex: 1;
+}
+
+.fmge-progress-chevron {
+  width: 16px;
+  height: 16px;
+  stroke: var(--tg-theme-hint-color);
+  flex-shrink: 0;
+}
+
+.fmge-progress-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.fmge-progress-body {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.fmge-progress-ring-container {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
+
+.fmge-progress-ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.fmge-ring-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 3;
+}
+
+.fmge-ring-fill {
+  fill: none;
+  stroke: #30d158;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fmge-ring-pct {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color);
+}
+
+.fmge-progress-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fmge-progress-bar-track {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.fmge-progress-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #30d158, #34c759);
+  transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fmge-progress-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tg-theme-hint-color);
+}
+
+/* ─── FMGE Tracker Section ──────────────────────────────────────────────── */
+.fmge-tracker-section {
+  padding: 0 20px 20px;
+}
+
+.fmge-tracker-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.fmge-tracker-header svg {
+  width: 22px;
+  height: 22px;
+  stroke: #30d158;
+  flex-shrink: 0;
+}
+
+.fmge-tracker-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--tg-theme-text-color);
+  margin: 0;
+}
+
+.fmge-tracker-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+/* Progress summary */
+.fmge-progress-summary {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.fmge-progress-summary-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.fmge-progress-pct {
+  font-size: 28px;
+  font-weight: 700;
+  color: #30d158;
+  line-height: 1;
+}
+
+.fmge-progress-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tg-theme-hint-color);
+}
+
+.fmge-progress-track {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.fmge-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #30d158, #34c759);
+  transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Grand Tests */
+.fmge-gt-section {
+  margin-bottom: 24px;
+}
+
+.fmge-gt-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--tg-theme-hint-color);
+  margin-bottom: 12px;
+}
+
+.fmge-gt-title svg {
+  width: 16px;
+  height: 16px;
+  stroke: #ff9f0a;
+  flex-shrink: 0;
+}
+
+.fmge-gt-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.fmge-gt-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 4px;
+  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--tg-theme-hint-color);
+  font-size: 11px;
+  font-weight: 700;
+  transition: all var(--transition-fast);
+}
+
+.fmge-gt-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--tg-theme-text-color);
+}
+
+.fmge-gt-btn.checked {
+  background: rgba(255, 159, 10, 0.15);
+  border-color: rgba(255, 159, 10, 0.3);
+  color: #ff9f0a;
+}
+
+.fmge-gt-btn:active {
+  transform: scale(0.92);
+}
+
+/* Subjects */
+.fmge-subjects-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--tg-theme-hint-color);
+  margin-bottom: 12px;
+}
+
+.fmge-subjects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fmge-subject-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.fmge-subject-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.fmge-subject-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tg-theme-text-color);
+}
+
+.fmge-subject-count {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--tg-theme-hint-color);
+}
+
+.fmge-subject-progress {
+  height: 3px;
+  border-radius: 1.5px;
+  background: rgba(255, 255, 255, 0.06);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.fmge-subject-progress-fill {
+  height: 100%;
+  border-radius: 1.5px;
+  background: #30d158;
+  transition: width 0.5s ease;
+}
+
+.fmge-subject-fields {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.fmge-field-btn {
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  color: var(--tg-theme-hint-color);
+  transition: all var(--transition-fast);
+  letter-spacing: 0.2px;
+}
+
+.fmge-field-btn.checked {
+  background: rgba(48, 209, 88, 0.12);
+  border-color: rgba(48, 209, 88, 0.3);
+  color: #30d158;
+}
+
+.fmge-field-btn:active {
+  transform: scale(0.92);
+}
+
 .fmge-content {
   display: grid;
   grid-template-columns: 1fr 1fr;

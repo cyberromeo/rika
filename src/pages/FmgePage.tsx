@@ -1,37 +1,68 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { hapticFeedback } from '../telegram';
+import {
+  getTrackerData,
+  updateSubjectTracker,
+  updateGTTracker,
+  SUBJECTS_LIST,
+  SUBJECT_FIELDS,
+  TOTAL_ITEMS,
+  calculateProgress,
+  TrackerData,
+} from '../api/tracker';
+
+const FIELD_LABELS: Record<string, string> = {
+  Videos: 'Videos', R1: 'Rev 1', R2: 'Rev 2', PYQs: 'PYQs',
+  RevisionVideos: 'Rev Vids', Qbank: 'Qbank',
+};
+
 export default function FmgePage() {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
-  });
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [tracker, setTracker] = useState<TrackerData | null>(null);
+  const [trackerLoading, setTrackerLoading] = useState(true);
 
   useEffect(() => {
     const examDate = new Date('2027-01-09T00:00:00').getTime();
-
     const updateTimer = () => {
       const now = new Date().getTime();
       const distance = examDate - now;
-
-      if (distance < 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
-      }
-
+      if (distance < 0) { setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 }); return; }
       setTimeLeft({
         days: Math.floor(distance / (1000 * 60 * 60 * 24)),
         hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
         minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-        seconds: Math.floor((distance % (1000 * 60)) / 1000)
+        seconds: Math.floor((distance % (1000 * 60)) / 1000),
       });
     };
-
     updateTimer();
     const timerId = setInterval(updateTimer, 1000);
     return () => clearInterval(timerId);
   }, []);
+
+  useEffect(() => {
+    getTrackerData().then(data => { setTracker(data); setTrackerLoading(false); });
+  }, []);
+
+  const handleSubjectChange = useCallback(async (subject: string, field: string, currentValue: boolean) => {
+    if (!tracker) return;
+    hapticFeedback('light');
+    const newVal = !currentValue;
+    setTracker(prev => prev ? {
+      ...prev,
+      subjects: { ...prev.subjects, [subject]: { ...prev.subjects[subject], [field]: newVal } },
+    } : prev);
+    await updateSubjectTracker(subject, field, newVal);
+  }, [tracker]);
+
+  const handleGTChange = useCallback(async (gt: string, currentValue: boolean) => {
+    if (!tracker) return;
+    hapticFeedback('light');
+    const newVal = !currentValue;
+    setTracker(prev => prev ? { ...prev, gts: { ...prev.gts, [gt]: newVal } } : prev);
+    await updateGTTracker(gt, newVal);
+  }, [tracker]);
+
+  const progress = tracker ? calculateProgress(tracker) : 0;
 
   return (
     <div className="page-enter">
@@ -65,55 +96,102 @@ export default function FmgePage() {
         </div>
       </div>
 
-      <div className="fmge-content">
-        {/* Placeholder sections — ready to be fleshed out */}
-        <div className="fmge-card" onClick={() => hapticFeedback('light')}>
-          <div className="fmge-card-header">
-            <svg className="fmge-card-icon" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8">
-              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-            </svg>
-            <h3>Subjects</h3>
-          </div>
-          <p className="fmge-card-desc">Browse subjects and track your revision progress.</p>
+      {/* Tracker Section */}
+      <div className="fmge-tracker-section">
+        <div className="fmge-tracker-header">
+          <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          <h2>Progress Tracker</h2>
         </div>
 
-        <div className="fmge-card" onClick={() => hapticFeedback('light')}>
-          <div className="fmge-card-header">
-            <svg className="fmge-card-icon" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8">
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-            <h3>Mock Tests</h3>
+        {trackerLoading ? (
+          <div className="fmge-tracker-loading">
+            <div className="loading-spinner small" />
           </div>
-          <p className="fmge-card-desc">Practice with timed question sets.</p>
-        </div>
+        ) : tracker ? (
+          <>
+            {/* Overall progress */}
+            <div className="fmge-progress-summary">
+              <div className="fmge-progress-summary-top">
+                <span className="fmge-progress-pct">{progress}%</span>
+                <span className="fmge-progress-count">
+                  {Math.round((progress / 100) * TOTAL_ITEMS)} / {TOTAL_ITEMS}
+                </span>
+              </div>
+              <div className="fmge-progress-track">
+                <div className="fmge-progress-fill" style={{ width: `${progress}%` }} />
+              </div>
+            </div>
 
-        <div className="fmge-card" onClick={() => hapticFeedback('light')}>
-          <div className="fmge-card-header">
-            <svg className="fmge-card-icon" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14 2 14 8 20 8" />
-              <line x1="16" y1="13" x2="8" y2="13" />
-              <line x1="16" y1="17" x2="8" y2="17" />
-              <polyline points="10 9 9 9 8 9" />
-            </svg>
-            <h3>Notes</h3>
-          </div>
-          <p className="fmge-card-desc">Quick-access study notes and high-yield topics.</p>
-        </div>
+            {/* Grand Tests */}
+            <div className="fmge-gt-section">
+              <div className="fmge-gt-title">
+                <svg viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                Grand Tests
+              </div>
+              <div className="fmge-gt-grid">
+                {[1, 2, 3, 4, 5, 6, 7].map(num => {
+                  const key = `GT${num}`;
+                  const checked = tracker.gts[key];
+                  return (
+                    <button
+                      key={key}
+                      className={`fmge-gt-btn ${checked ? 'checked' : ''}`}
+                      onClick={() => handleGTChange(key, checked)}
+                    >
+                      {checked ? (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      ) : (
+                        <span>GT{num}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-        <div className="fmge-card" onClick={() => hapticFeedback('light')}>
-          <div className="fmge-card-header">
-            <svg className="fmge-card-icon" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8">
-              <line x1="18" y1="20" x2="18" y2="10" />
-              <line x1="12" y1="20" x2="12" y2="4" />
-              <line x1="6" y1="20" x2="6" y2="14" />
-            </svg>
-            <h3>Progress</h3>
-          </div>
-          <p className="fmge-card-desc">View your overall preparation stats.</p>
-        </div>
+            {/* Subjects */}
+            <div className="fmge-subjects-title">Subjects</div>
+            <div className="fmge-subjects-list">
+              {SUBJECTS_LIST.map(subject => {
+                const subData = tracker.subjects[subject] || {};
+                const subCompleted = SUBJECT_FIELDS.filter(f => (subData as any)[f]).length;
+                const subProgress = Math.round((subCompleted / 6) * 100);
+                return (
+                  <div key={subject} className="fmge-subject-card">
+                    <div className="fmge-subject-header">
+                      <span className="fmge-subject-name">{subject}</span>
+                      <span className="fmge-subject-count">{subCompleted}/6</span>
+                    </div>
+                    <div className="fmge-subject-progress">
+                      <div className="fmge-subject-progress-fill" style={{ width: `${subProgress}%` }} />
+                    </div>
+                    <div className="fmge-subject-fields">
+                      {SUBJECT_FIELDS.map(field => {
+                        const checked = !!(subData as any)[field];
+                        return (
+                          <button
+                            key={field}
+                            className={`fmge-field-btn ${checked ? 'checked' : ''}`}
+                            onClick={() => handleSubjectChange(subject, field, checked)}
+                          >
+                            {FIELD_LABELS[field]}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : null}
       </div>
     </div>
   );
