@@ -1,4 +1,5 @@
-const API_URL = 'https://medx.srihari.quest/api/tracker';
+const TARGET_USER_ID = 'NpFFvozZSFWnCKdmutkISEGPf8o2';
+const API_URL = `https://medx.srihari.quest/api/tracker?userId=${TARGET_USER_ID}`;
 const LOCAL_STORAGE_KEY = 'fmge_tracker_data_v1';
 
 export const SUBJECTS_LIST = [
@@ -116,7 +117,7 @@ export async function updateSubjectTracker(subject: string, field: string, value
     await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subject, field, value }),
+      body: JSON.stringify({ userId: TARGET_USER_ID, subject, field, value }),
     });
   } catch (error) {
     console.error('Error updating subject tracker via API:', error);
@@ -136,7 +137,7 @@ export async function updateGTTracker(gt: string, value: boolean): Promise<void>
     await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ gt, value }),
+      body: JSON.stringify({ userId: TARGET_USER_ID, gt, value }),
     });
   } catch (error) {
     console.error('Error updating GT tracker via API:', error);
