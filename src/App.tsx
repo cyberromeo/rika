@@ -4,12 +4,12 @@ import { PowerProvider } from './store/powerStore';
 import HomePage from './pages/HomePage';
 import TasksPage from './pages/TasksPage';
 import CalendarPage from './pages/CalendarPage';
-import FmgePage from './pages/FmgePage';
+import StudyPage from './pages/StudyPage';
 import AddTaskModal from './components/AddTaskModal';
 import UnauthorizedScreen from './components/UnauthorizedScreen';
 import { hapticFeedback } from './telegram';
 
-type TabId = 'home' | 'tasks' | 'calendar' | 'fmge';
+type TabId = 'home' | 'tasks' | 'calendar' | 'study';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<TabId>('home');
@@ -39,15 +39,15 @@ function AppContent() {
           <HomePage
             chartOpen={chartOpen}
             setChartOpen={setChartOpen}
-            onNavigateFmge={() => handleTabChange('fmge')}
+            onNavigateFmge={() => handleTabChange('study')}
           />
         );
       case 'tasks':
         return <TasksPage cartOpen={cartOpen} setCartOpen={setCartOpen} />;
       case 'calendar':
         return <CalendarPage onAddTask={openAddModal} />;
-      case 'fmge':
-        return <FmgePage />;
+      case 'study':
+        return <StudyPage />;
     }
   };
 
@@ -70,7 +70,7 @@ function AppContent() {
         </svg>
       </button>
 
-      {/* iOS 26 Liquid Glass Tab Bar */}
+      {/* iOS Liquid Glass Tab Bar */}
       <nav className={`bottom-nav ${(cartOpen || chartOpen) ? 'hidden' : ''}`} role="tablist">
         <button
           className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`}
@@ -117,17 +117,17 @@ function AppContent() {
         </button>
 
         <button
-          className={`nav-btn ${activeTab === 'fmge' ? 'active' : ''}`}
-          onClick={() => handleTabChange('fmge')}
+          className={`nav-btn ${activeTab === 'study' ? 'active' : ''}`}
+          onClick={() => handleTabChange('study')}
           role="tab"
-          aria-selected={activeTab === 'fmge'}
-          aria-label="FMGE"
+          aria-selected={activeTab === 'study'}
+          aria-label="Study"
         >
           <svg viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
           </svg>
-          <span>FMGE</span>
+          <span>Study</span>
         </button>
       </nav>
 
