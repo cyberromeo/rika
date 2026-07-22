@@ -11,22 +11,41 @@ let authPromise: Promise<void> | null = null;
 
 export async function ensureAuthenticated(): Promise<void> {
   if (auth.currentUser) return;
-  if (!authPromise) {
-    authPromise = (async () => {
-      try {
-        const res = await fetch('/api/firebase-token');
-        if (res.ok) {
-          const { token } = await res.json();
-          if (token) {
-            await signInWithCustomToken(auth, token);
-          }
-        }
-      } catch (e) {
-        console.error('Failed to authenticate with Firebase Auth:', e);
+
+  return new Promise((resolve) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        unsubscribe();
+        resolve();
+        return;
       }
-    })();
-  }
-  await authPromise;
+
+      if (!authPromise) {
+        authPromise = (async () => {
+          try {
+            const res = await fetch('/api/firebase-token');
+            if (res.ok) {
+              const data = await res.json();
+              if (data.token) {
+                await signInWithCustomToken(auth, data.token);
+              }
+            } else {
+              console.error('Firebase token endpoint status:', res.status);
+            }
+          } catch (e) {
+            console.error('Failed to authenticate with Firebase Auth:', e);
+          }
+        })();
+      }
+
+      try {
+        await authPromise;
+      } finally {
+        unsubscribe();
+        resolve();
+      }
+    });
+  });
 }
 
 function getUserId(): string {
