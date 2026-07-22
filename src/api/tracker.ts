@@ -1,5 +1,5 @@
 import { db } from '../lib/firebase';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
 
 const TRACKER_COL = 'user_tracker';
 const LOCAL_STORAGE_KEY = 'fmge_tracker_data_v1';
@@ -69,6 +69,30 @@ function saveLocalData(data: TrackerData) {
   } catch (e) {
     console.error('Error saving tracker local storage:', e);
   }
+}
+
+export function subscribeTrackerData(callback: (data: TrackerData) => void): () => void {
+  const userId = getUserId();
+  const docRef = doc(db, TRACKER_COL, userId);
+
+  // Return real-time Firestore unsubscription handler
+  return onSnapshot(
+    docRef,
+    (docSnap) => {
+      if (docSnap.exists()) {
+        const remoteData = docSnap.data() as TrackerData;
+        const merged: TrackerData = {
+          subjects: { ...INITIAL_STATE.subjects, ...(remoteData.subjects || {}) },
+          gts: { ...INITIAL_STATE.gts, ...(remoteData.gts || {}) },
+        };
+        saveLocalData(merged);
+        callback(merged);
+      }
+    },
+    (error) => {
+      console.error('Realtime tracker listener error:', error);
+    }
+  );
 }
 
 export async function getTrackerData(): Promise<TrackerData> {

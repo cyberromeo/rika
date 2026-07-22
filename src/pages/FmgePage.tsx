@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { hapticFeedback } from '../telegram';
 import {
   getTrackerData,
+  subscribeTrackerData,
   updateSubjectTracker,
   updateGTTracker,
   SUBJECTS_LIST,
@@ -44,6 +45,11 @@ export default function FmgePage() {
 
   useEffect(() => {
     getTrackerData().then(data => { setTracker(data); setTrackerLoading(false); });
+    const unsubscribe = subscribeTrackerData(data => {
+      setTracker(data);
+      setTrackerLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
   const handleTabChange = (next: FmgeTab) => {

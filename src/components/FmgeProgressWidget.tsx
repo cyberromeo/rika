@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   getTrackerData,
+  subscribeTrackerData,
   calculateProgress,
   SUBJECTS_LIST,
   SUBJECT_FIELDS,
@@ -31,6 +32,11 @@ export default function FmgeProgressWidget({ onNavigate }: FmgeProgressWidgetPro
       setLoading(false);
     };
     load();
+    const unsubscribe = subscribeTrackerData(data => {
+      setTracker(data);
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
