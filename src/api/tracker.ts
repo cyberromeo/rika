@@ -1,5 +1,5 @@
 import { db } from '../lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 const TRACKER_COL = 'user_tracker';
 const LOCAL_STORAGE_KEY = 'fmge_tracker_data_v1';
@@ -72,7 +72,6 @@ function saveLocalData(data: TrackerData) {
 }
 
 export async function getTrackerData(): Promise<TrackerData> {
-  const local = getLocalData();
   const userId = getUserId();
   
   try {
@@ -81,12 +80,13 @@ export async function getTrackerData(): Promise<TrackerData> {
     if (docSnap.exists()) {
       const remoteData = docSnap.data() as TrackerData;
       const merged: TrackerData = {
-        subjects: { ...INITIAL_STATE.subjects, ...(local?.subjects || {}), ...(remoteData.subjects || {}) },
-        gts: { ...INITIAL_STATE.gts, ...(local?.gts || {}), ...(remoteData.gts || {}) },
+        subjects: { ...INITIAL_STATE.subjects, ...(remoteData.subjects || {}) },
+        gts: { ...INITIAL_STATE.gts, ...(remoteData.gts || {}) },
       };
       saveLocalData(merged);
       return merged;
     } else {
+      const local = getLocalData();
       const dataToSave = local || INITIAL_STATE;
       await setDoc(docRef, dataToSave, { merge: true });
       saveLocalData(dataToSave);
@@ -94,7 +94,7 @@ export async function getTrackerData(): Promise<TrackerData> {
     }
   } catch (error) {
     console.error('Error fetching tracker data from Firestore:', error);
-    return local || INITIAL_STATE;
+    return getLocalData() || INITIAL_STATE;
   }
 }
 
@@ -113,9 +113,19 @@ export async function updateSubjectTracker(subject: string, field: string, value
   try {
     const userId = getUserId();
     const docRef = doc(db, TRACKER_COL, userId);
-    await setDoc(docRef, {
-      [`subjects.${subject}.${field}`]: value
-    }, { merge: true });
+    try {
+      await updateDoc(docRef, {
+        [`subjects.${subject}.${field}`]: value
+      });
+    } catch {
+      await setDoc(docRef, {
+        subjects: {
+          [subject]: {
+            [field]: value
+          }
+        }
+      }, { merge: true });
+    }
   } catch (error) {
     console.error('Error updating subject tracker in Firestore:', error);
   }
@@ -133,9 +143,17 @@ export async function updateGTTracker(gt: string, value: boolean): Promise<void>
   try {
     const userId = getUserId();
     const docRef = doc(db, TRACKER_COL, userId);
-    await setDoc(docRef, {
-      [`gts.${gt}`]: value
-    }, { merge: true });
+    try {
+      await updateDoc(docRef, {
+        [`gts.${gt}`]: value
+      });
+    } catch {
+      await setDoc(docRef, {
+        gts: {
+          [gt]: value
+        }
+      }, { merge: true });
+    }
   } catch (error) {
     console.error('Error updating GT tracker in Firestore:', error);
   }
