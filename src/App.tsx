@@ -6,6 +6,7 @@ import TasksPage from './pages/TasksPage';
 import CalendarPage from './pages/CalendarPage';
 import FmgePage from './pages/FmgePage';
 import AddTaskModal from './components/AddTaskModal';
+import UnauthorizedScreen from './components/UnauthorizedScreen';
 import { hapticFeedback } from './telegram';
 
 type TabId = 'home' | 'tasks' | 'calendar' | 'fmge';
@@ -141,6 +142,21 @@ function AppContent() {
 }
 
 export default function App() {
+  const ALLOWED_USER_ID = '940420310';
+  const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
+  const isTelegram = Boolean(tgUser?.id);
+  const currentUserId = tgUser?.id ? String(tgUser.id) : null;
+
+  // In Telegram Mini App, restrict strictly to allowed TG user ID 940420310.
+  // Outside Telegram (e.g. local browser dev), allow in DEV mode for testing.
+  const isAuthorized = isTelegram
+    ? currentUserId === ALLOWED_USER_ID
+    : (import.meta.env.DEV || currentUserId === ALLOWED_USER_ID);
+
+  if (!isAuthorized) {
+    return <UnauthorizedScreen />;
+  }
+
   return (
     <TaskProvider>
       <PowerProvider>
