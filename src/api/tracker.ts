@@ -1,56 +1,5 @@
-import { app, db } from '../lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
-import { getAuth, signInWithCustomToken } from 'firebase/auth';
-
-const TRACKER_COL = 'user_tracker';
+const API_URL = 'https://medx.srihari.quest/api/tracker';
 const LOCAL_STORAGE_KEY = 'fmge_tracker_data_v1';
-const DEFAULT_USER_ID = 'NpFFvozZSFWnCKdmutkISEGPf8o2';
-
-const auth = getAuth(app);
-let authPromise: Promise<void> | null = null;
-
-export async function ensureAuthenticated(): Promise<void> {
-  if (auth.currentUser) return;
-
-  return new Promise((resolve) => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        unsubscribe();
-        resolve();
-        return;
-      }
-
-      if (!authPromise) {
-        authPromise = (async () => {
-          try {
-            const res = await fetch('/api/firebase-token');
-            if (res.ok) {
-              const data = await res.json();
-              if (data.token) {
-                await signInWithCustomToken(auth, data.token);
-              }
-            } else {
-              console.error('Firebase token endpoint status:', res.status);
-            }
-          } catch (e) {
-            console.error('Failed to authenticate with Firebase Auth:', e);
-          }
-        })();
-      }
-
-      try {
-        await authPromise;
-      } finally {
-        unsubscribe();
-        resolve();
-      }
-    });
-  });
-}
-
-function getUserId(): string {
-  return import.meta.env.VITE_FIREBASE_USER_ID || DEFAULT_USER_ID;
-}
 
 export const SUBJECTS_LIST = [
   'Anatomy', 'Physiology', 'Biochemistry', 'Pathology',
@@ -114,65 +63,41 @@ function saveLocalData(data: TrackerData) {
 }
 
 export function subscribeTrackerData(callback: (data: TrackerData) => void): () => void {
-  const userId = getUserId();
-  const docRef = doc(db, TRACKER_COL, userId);
-
-  let unsubSnapshot: (() => void) | null = null;
   let isCancelled = false;
 
-  ensureAuthenticated().then(() => {
+  const fetchLatest = async () => {
     if (isCancelled) return;
-    unsubSnapshot = onSnapshot(
-      docRef,
-      (docSnap) => {
-        if (docSnap.exists()) {
-          const remoteData = docSnap.data() as TrackerData;
-          const merged: TrackerData = {
-            subjects: { ...INITIAL_STATE.subjects, ...(remoteData.subjects || {}) },
-            gts: { ...INITIAL_STATE.gts, ...(remoteData.gts || {}) },
-          };
-          saveLocalData(merged);
-          callback(merged);
-        }
-      },
-      (error) => {
-        console.error('Realtime tracker listener error:', error);
-      }
-    );
-  });
+    const data = await getTrackerData();
+    if (!isCancelled) {
+      callback(data);
+    }
+  };
+
+  fetchLatest();
+  const intervalId = setInterval(fetchLatest, 5000);
 
   return () => {
     isCancelled = true;
-    if (unsubSnapshot) unsubSnapshot();
+    clearInterval(intervalId);
   };
 }
 
 export async function getTrackerData(): Promise<TrackerData> {
-  await ensureAuthenticated();
-  const userId = getUserId();
-  
   try {
-    const docRef = doc(db, TRACKER_COL, userId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      const remoteData = docSnap.data() as TrackerData;
+    const res = await fetch(API_URL);
+    if (res.ok) {
+      const data = await res.json();
       const merged: TrackerData = {
-        subjects: { ...INITIAL_STATE.subjects, ...(remoteData.subjects || {}) },
-        gts: { ...INITIAL_STATE.gts, ...(remoteData.gts || {}) },
+        subjects: { ...INITIAL_STATE.subjects, ...(data.subjects || {}) },
+        gts: { ...INITIAL_STATE.gts, ...(data.gts || {}) },
       };
       saveLocalData(merged);
       return merged;
-    } else {
-      const local = getLocalData();
-      const dataToSave = local || INITIAL_STATE;
-      await setDoc(docRef, dataToSave, { merge: true });
-      saveLocalData(dataToSave);
-      return dataToSave;
     }
   } catch (error) {
-    console.error('Error fetching tracker data from Firestore:', error);
-    return getLocalData() || INITIAL_STATE;
+    console.error('Error fetching tracker data from API:', error);
   }
+  return getLocalData() || INITIAL_STATE;
 }
 
 export async function updateSubjectTracker(subject: string, field: string, value: boolean): Promise<void> {
@@ -188,24 +113,13 @@ export async function updateSubjectTracker(subject: string, field: string, value
   saveLocalData(updatedData);
 
   try {
-    await ensureAuthenticated();
-    const userId = getUserId();
-    const docRef = doc(db, TRACKER_COL, userId);
-    try {
-      await updateDoc(docRef, {
-        [`subjects.${subject}.${field}`]: value
-      });
-    } catch {
-      await setDoc(docRef, {
-        subjects: {
-          [subject]: {
-            [field]: value
-          }
-        }
-      }, { merge: true });
-    }
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject, field, value }),
+    });
   } catch (error) {
-    console.error('Error updating subject tracker in Firestore:', error);
+    console.error('Error updating subject tracker via API:', error);
   }
 }
 
@@ -219,22 +133,13 @@ export async function updateGTTracker(gt: string, value: boolean): Promise<void>
   saveLocalData(updatedData);
 
   try {
-    await ensureAuthenticated();
-    const userId = getUserId();
-    const docRef = doc(db, TRACKER_COL, userId);
-    try {
-      await updateDoc(docRef, {
-        [`gts.${gt}`]: value
-      });
-    } catch {
-      await setDoc(docRef, {
-        gts: {
-          [gt]: value
-        }
-      }, { merge: true });
-    }
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gt, value }),
+    });
   } catch (error) {
-    console.error('Error updating GT tracker in Firestore:', error);
+    console.error('Error updating GT tracker via API:', error);
   }
 }
 
