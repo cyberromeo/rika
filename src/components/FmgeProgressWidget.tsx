@@ -134,7 +134,7 @@ export default function FmgeProgressWidget({ onNavigate }: FmgeProgressWidgetPro
               <div className="fmge-widget-stat-divider" />
               <div className="fmge-widget-stat">
                 <span className="fmge-widget-stat-num">{completedGTs}<span className="fmge-widget-stat-sub">/7</span></span>
-                <span className="fmge-widget-stat-lbl">Grand Tests</span>
+                <span className="fmge-widget-stat-lbl">GTs</span>
               </div>
               <div className="fmge-widget-stat-divider" />
               <div className="fmge-widget-stat">

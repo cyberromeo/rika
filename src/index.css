@@ -2133,7 +2133,10 @@ input::placeholder, textarea::placeholder {
 
 .fmge-widget-ring-pct {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   align-items: baseline;
   justify-content: center;
@@ -2198,12 +2201,15 @@ input::placeholder, textarea::placeholder {
 }
 
 .fmge-widget-stat-lbl {
-  font-size: 9px;
+  font-size: 8.5px;
   font-weight: 600;
   color: var(--tg-theme-hint-color);
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   line-height: 1;
+  margin-top: 1px;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .fmge-widget-stat-divider {
