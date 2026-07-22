@@ -1,10 +1,33 @@
-import { db } from '../lib/firebase';
+import { app, db } from '../lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { getAuth, signInWithCustomToken } from 'firebase/auth';
 
 const TRACKER_COL = 'user_tracker';
 const LOCAL_STORAGE_KEY = 'fmge_tracker_data_v1';
-
 const DEFAULT_USER_ID = 'NpFFvozZSFWnCKdmutkISEGPf8o2';
+
+const auth = getAuth(app);
+let authPromise: Promise<void> | null = null;
+
+export async function ensureAuthenticated(): Promise<void> {
+  if (auth.currentUser) return;
+  if (!authPromise) {
+    authPromise = (async () => {
+      try {
+        const res = await fetch('/api/firebase-token');
+        if (res.ok) {
+          const { token } = await res.json();
+          if (token) {
+            await signInWithCustomToken(auth, token);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to authenticate with Firebase Auth:', e);
+      }
+    })();
+  }
+  await authPromise;
+}
 
 function getUserId(): string {
   return import.meta.env.VITE_FIREBASE_USER_ID || DEFAULT_USER_ID;
@@ -75,27 +98,38 @@ export function subscribeTrackerData(callback: (data: TrackerData) => void): () 
   const userId = getUserId();
   const docRef = doc(db, TRACKER_COL, userId);
 
-  // Return real-time Firestore unsubscription handler
-  return onSnapshot(
-    docRef,
-    (docSnap) => {
-      if (docSnap.exists()) {
-        const remoteData = docSnap.data() as TrackerData;
-        const merged: TrackerData = {
-          subjects: { ...INITIAL_STATE.subjects, ...(remoteData.subjects || {}) },
-          gts: { ...INITIAL_STATE.gts, ...(remoteData.gts || {}) },
-        };
-        saveLocalData(merged);
-        callback(merged);
+  let unsubSnapshot: (() => void) | null = null;
+  let isCancelled = false;
+
+  ensureAuthenticated().then(() => {
+    if (isCancelled) return;
+    unsubSnapshot = onSnapshot(
+      docRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const remoteData = docSnap.data() as TrackerData;
+          const merged: TrackerData = {
+            subjects: { ...INITIAL_STATE.subjects, ...(remoteData.subjects || {}) },
+            gts: { ...INITIAL_STATE.gts, ...(remoteData.gts || {}) },
+          };
+          saveLocalData(merged);
+          callback(merged);
+        }
+      },
+      (error) => {
+        console.error('Realtime tracker listener error:', error);
       }
-    },
-    (error) => {
-      console.error('Realtime tracker listener error:', error);
-    }
-  );
+    );
+  });
+
+  return () => {
+    isCancelled = true;
+    if (unsubSnapshot) unsubSnapshot();
+  };
 }
 
 export async function getTrackerData(): Promise<TrackerData> {
+  await ensureAuthenticated();
   const userId = getUserId();
   
   try {
@@ -135,6 +169,7 @@ export async function updateSubjectTracker(subject: string, field: string, value
   saveLocalData(updatedData);
 
   try {
+    await ensureAuthenticated();
     const userId = getUserId();
     const docRef = doc(db, TRACKER_COL, userId);
     try {
@@ -165,6 +200,7 @@ export async function updateGTTracker(gt: string, value: boolean): Promise<void>
   saveLocalData(updatedData);
 
   try {
+    await ensureAuthenticated();
     const userId = getUserId();
     const docRef = doc(db, TRACKER_COL, userId);
     try {
