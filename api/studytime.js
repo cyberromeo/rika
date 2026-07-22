@@ -20,6 +20,7 @@ const adminDb = getFirestore();
 const PASSWORD = 'superstudiopro';
 const DEFAULT_DAILY_GOAL = 11 * 3600; // 11 hours
 const DEFAULT_PYQ_GOAL = 2 * 3600;    // 2 hours
+const DEFAULT_NTFY_TOPIC = 'https://ntfy.sh/medx_study_siren_superstudiopro';
 
 function getStudyDayAnchor(date = new Date()) {
   const istOffset = 5.5 * 60 * 60 * 1000;
@@ -101,6 +102,68 @@ function computeWeeklySummary(history, historyPyq, currentAnchor, todayStudySecs
   };
 }
 
+async function dispatchSirenWebhook(webhookUrl, mode, durationSeconds) {
+  const results = [];
+  const titleStr = mode === 'pyq' ? '🚨 PYQ SESSION COMPLETED!' : '🚨 AERO FOCUS TIMER ENDED!';
+  const bodyStr = mode === 'pyq' ? 'Great job on PYQs! Keep grinding!' : 'TIMER ENDED! GET BACK TO WORK IMMEDIATELY!';
+
+  try {
+    const ntfyRes = await fetch(DEFAULT_NTFY_TOPIC, {
+      method: 'POST',
+      headers: {
+        Title: titleStr,
+        Priority: '5',
+        Tags: mode === 'pyq' ? 'books,target,fire' : 'warning,alarm_clock,rotating_light',
+      },
+      body: bodyStr,
+    });
+    results.push({ target: 'ntfy_default', success: ntfyRes.ok, status: ntfyRes.status });
+  } catch (e) {
+    results.push({ target: 'ntfy_default', success: false, error: e.message });
+  }
+
+  if (webhookUrl && webhookUrl.trim() && webhookUrl.trim() !== DEFAULT_NTFY_TOPIC) {
+    try {
+      const payload = {
+        title: titleStr,
+        body: bodyStr,
+        message: `${titleStr}\n${bodyStr}`,
+        content: `${titleStr}\n**${bodyStr}**`,
+        text: `${titleStr}\n${bodyStr}`,
+        topic: 'studytime',
+        priority: 5,
+        event: 'timer_ended',
+        mode: mode || 'study',
+        durationSeconds: durationSeconds || 3600,
+        timestamp: new Date().toISOString(),
+      };
+
+      const customRes = await fetch(webhookUrl.trim(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const resText = await customRes.text().catch(() => '');
+      results.push({
+        target: 'custom_webhook',
+        success: customRes.ok,
+        status: customRes.status,
+        response: resText.substring(0, 150),
+      });
+    } catch (err) {
+      results.push({ target: 'custom_webhook', success: false, error: err.message });
+    }
+  }
+
+  const primaryResult = results.find((r) => r.target === 'custom_webhook') || results[0];
+  return {
+    success: primaryResult ? primaryResult.success : true,
+    results,
+    primary: primaryResult,
+  };
+}
+
 async function getOrInitState() {
   const docRef = adminDb.collection('studyTime').doc('globalState');
   const doc = await docRef.get();
@@ -117,7 +180,7 @@ async function getOrInitState() {
     streak: 0,
     streakPyq: 0,
     todos: [],
-    webhookUrl: '',
+    webhookUrl: DEFAULT_NTFY_TOPIC,
     activeTimer: null,
     lastUpdated: new Date().toISOString(),
   };
@@ -133,7 +196,7 @@ async function getOrInitState() {
       history: data.history || {},
       historyPyq: data.historyPyq || {},
       todos: data.todos || [],
-      webhookUrl: data.webhookUrl || '',
+      webhookUrl: data.webhookUrl || DEFAULT_NTFY_TOPIC,
       activeTimer: data.activeTimer || null,
     };
 
@@ -147,6 +210,48 @@ async function getOrInitState() {
       state.todayStudySeconds = 0;
       state.todayPyqSeconds = 0;
       state.todos = (state.todos || []).filter((t) => !t.completed);
+    }
+  }
+
+  // Cloud timer evaluation
+  if (state.activeTimer && state.activeTimer.isRunning) {
+    const now = Date.now();
+    const startTimeMs = new Date(state.activeTimer.startTime).getTime();
+    const elapsedSecs = Math.max(0, Math.floor((now - startTimeMs) / 1000));
+    const remainingSecs = Math.max(0, state.activeTimer.durationSeconds - elapsedSecs);
+
+    state.activeTimer.secondsRemaining = remainingSecs;
+    state.activeTimer.elapsedSeconds = elapsedSecs;
+
+    if (remainingSecs <= 0 && !state.activeTimer.completed) {
+      state.activeTimer.completed = true;
+      state.activeTimer.isRunning = false;
+
+      const addedSeconds = state.activeTimer.durationSeconds;
+      const mode = state.activeTimer.mode || 'study';
+
+      if (mode === 'pyq') {
+        state.todayPyqSeconds = (state.todayPyqSeconds || 0) + addedSeconds;
+        state.historyPyq[todayAnchor] = state.todayPyqSeconds;
+      } else if (mode === 'study') {
+        state.todayStudySeconds = (state.todayStudySeconds || 0) + addedSeconds;
+        state.history[todayAnchor] = state.todayStudySeconds;
+      }
+
+      await adminDb.collection('studyTimeLogs').add({
+        seconds: addedSeconds,
+        mode: mode,
+        note: state.activeTimer.note || (mode === 'pyq' ? 'Cloud PYQ Session Completed' : 'Cloud Study Session Completed'),
+        anchorDay: todayAnchor,
+        timestamp: new Date().toISOString(),
+        source: 'cloud_timer',
+      });
+
+      await dispatchSirenWebhook(
+        state.webhookUrl || state.activeTimer.webhookUrl,
+        mode,
+        addedSeconds
+      );
     }
   }
 
@@ -205,12 +310,15 @@ export default async function handler(req, res) {
           const durationSeconds = Math.max(10, parseInt(body.durationSeconds || 3600, 10));
           const mode = body.mode || 'study';
           const note = body.note || '';
+          const webhookUrl = body.webhookUrl || state.webhookUrl || DEFAULT_NTFY_TOPIC;
+
           state.activeTimer = {
             id: 'timer_' + Date.now(),
             startTime: new Date().toISOString(),
             durationSeconds,
             mode,
             note,
+            webhookUrl,
             isRunning: true,
             completed: false,
             secondsRemaining: durationSeconds,
@@ -222,7 +330,14 @@ export default async function handler(req, res) {
 
         case 'pause_timer': {
           if (state.activeTimer && state.activeTimer.isRunning) {
+            const now = Date.now();
+            const startTimeMs = new Date(state.activeTimer.startTime).getTime();
+            const elapsedSecs = Math.max(0, Math.floor((now - startTimeMs) / 1000));
+            const remainingSecs = Math.max(0, state.activeTimer.durationSeconds - elapsedSecs);
+
             state.activeTimer.isRunning = false;
+            state.activeTimer.secondsRemaining = remainingSecs;
+            state.activeTimer.durationSeconds = remainingSecs;
             state.lastUpdated = new Date().toISOString();
           }
           break;
@@ -230,6 +345,10 @@ export default async function handler(req, res) {
 
         case 'resume_timer': {
           if (state.activeTimer && !state.activeTimer.isRunning && !state.activeTimer.completed) {
+            const remaining = state.activeTimer.secondsRemaining || state.activeTimer.durationSeconds || 3600;
+            state.activeTimer.startTime = new Date().toISOString();
+            state.activeTimer.durationSeconds = remaining;
+            state.activeTimer.secondsRemaining = remaining;
             state.activeTimer.isRunning = true;
             state.lastUpdated = new Date().toISOString();
           }
@@ -240,6 +359,18 @@ export default async function handler(req, res) {
           state.activeTimer = null;
           state.lastUpdated = new Date().toISOString();
           break;
+        }
+
+        case 'set_webhook': {
+          state.webhookUrl = (body.webhookUrl || DEFAULT_NTFY_TOPIC).trim();
+          state.lastUpdated = new Date().toISOString();
+          break;
+        }
+
+        case 'test_webhook': {
+          const targetUrl = body.webhookUrl || state.webhookUrl || DEFAULT_NTFY_TOPIC;
+          const result = await dispatchSirenWebhook(targetUrl, 'test', 3600);
+          return res.status(200).json({ success: true, result, state });
         }
 
         case 'log': {
@@ -269,6 +400,36 @@ export default async function handler(req, res) {
           break;
         }
 
+        case 'set_seconds': {
+          const seconds = Math.max(0, parseInt(body.seconds || 0, 10));
+          state.todayStudySeconds = seconds;
+          state.history[todayAnchor] = seconds;
+          state.lastUpdated = new Date().toISOString();
+          break;
+        }
+
+        case 'set_pyq_seconds': {
+          const seconds = Math.max(0, parseInt(body.seconds || 0, 10));
+          state.todayPyqSeconds = seconds;
+          state.historyPyq[todayAnchor] = seconds;
+          state.lastUpdated = new Date().toISOString();
+          break;
+        }
+
+        case 'set_goal': {
+          const goalSeconds = Math.max(60, parseInt(body.goalSeconds || DEFAULT_DAILY_GOAL, 10));
+          state.dailyGoalSeconds = goalSeconds;
+          state.lastUpdated = new Date().toISOString();
+          break;
+        }
+
+        case 'set_pyq_goal': {
+          const pyqGoalSeconds = Math.max(60, parseInt(body.pyqGoalSeconds || DEFAULT_PYQ_GOAL, 10));
+          state.dailyPyqGoalSeconds = pyqGoalSeconds;
+          state.lastUpdated = new Date().toISOString();
+          break;
+        }
+
         case 'reset_today': {
           state.todayStudySeconds = 0;
           state.todayPyqSeconds = 0;
@@ -278,8 +439,72 @@ export default async function handler(req, res) {
           break;
         }
 
-        default:
+        case 'add_todo': {
+          const text = (body.text || '').trim();
+          if (text) {
+            const newTodo = {
+              id: 'todo_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+              text,
+              completed: false,
+              createdAt: new Date().toISOString(),
+            };
+            state.todos = [newTodo, ...(state.todos || [])];
+            state.lastUpdated = new Date().toISOString();
+          }
           break;
+        }
+
+        case 'toggle_todo': {
+          const id = body.id;
+          state.todos = (state.todos || []).map((t) =>
+            t.id === id ? { ...t, completed: !t.completed } : t
+          );
+          state.lastUpdated = new Date().toISOString();
+          break;
+        }
+
+        case 'delete_todo': {
+          const id = body.id;
+          state.todos = (state.todos || []).filter((t) => t.id !== id);
+          state.lastUpdated = new Date().toISOString();
+          break;
+        }
+
+        case 'clear_todos': {
+          state.todos = (state.todos || []).filter((t) => !t.completed);
+          state.lastUpdated = new Date().toISOString();
+          break;
+        }
+
+        case 'sync': {
+          if (body.state) {
+            if (typeof body.state.todayStudySeconds === 'number') {
+              state.todayStudySeconds = body.state.todayStudySeconds;
+              state.history[todayAnchor] = state.todayStudySeconds;
+            }
+            if (typeof body.state.todayPyqSeconds === 'number') {
+              state.todayPyqSeconds = body.state.todayPyqSeconds;
+              state.historyPyq[todayAnchor] = state.todayPyqSeconds;
+            }
+            if (Array.isArray(body.state.todos)) {
+              state.todos = body.state.todos;
+            }
+            if (typeof body.state.dailyGoalSeconds === 'number') {
+              state.dailyGoalSeconds = body.state.dailyGoalSeconds;
+            }
+            if (typeof body.state.dailyPyqGoalSeconds === 'number') {
+              state.dailyPyqGoalSeconds = body.state.dailyPyqGoalSeconds;
+            }
+            if (typeof body.state.webhookUrl === 'string') {
+              state.webhookUrl = body.state.webhookUrl;
+            }
+            state.lastUpdated = new Date().toISOString();
+          }
+          break;
+        }
+
+        default:
+          return res.status(400).json({ error: `Invalid action '${action}'` });
       }
 
       state.streak = calculateStreak(state.history, todayAnchor, state.dailyGoalSeconds);
@@ -301,7 +526,7 @@ export default async function handler(req, res) {
       };
 
       await docRef.set(finalState, { merge: true });
-      return res.status(200).json({ success: true, state: finalState });
+      return res.status(200).json({ success: true, action, state: finalState });
     }
 
     res.setHeader('Allow', 'GET, POST, OPTIONS');

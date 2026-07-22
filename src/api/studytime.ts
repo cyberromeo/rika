@@ -194,3 +194,31 @@ export async function resumeCloudTimer(): Promise<StudyTimeState | null> {
 export async function cancelCloudTimer(): Promise<StudyTimeState | null> {
   return postStudyTimeAction('cancel_timer');
 }
+
+export async function setStudyGoal(goalSeconds: number): Promise<StudyTimeState | null> {
+  return postStudyTimeAction('set_goal', { goalSeconds });
+}
+
+export async function setPyqGoal(pyqGoalSeconds: number): Promise<StudyTimeState | null> {
+  return postStudyTimeAction('set_pyq_goal', { pyqGoalSeconds });
+}
+
+export async function resetTodayStudyTime(): Promise<StudyTimeState | null> {
+  return postStudyTimeAction('reset_today');
+}
+
+export async function addStudyTodo(text: string): Promise<StudyTimeState | null> {
+  return postStudyTimeAction('add_todo', { text });
+}
+
+export async function toggleStudyTodo(id: string): Promise<StudyTimeState | null> {
+  return postStudyTimeAction('toggle_todo', { id });
+}
+
+export async function deleteStudyTodo(id: string): Promise<StudyTimeState | null> {
+  return postStudyTimeAction('delete_todo', { id });
+}
+
+export async function clearCompletedStudyTodos(): Promise<StudyTimeState | null> {
+  return postStudyTimeAction('clear_todos');
+}
