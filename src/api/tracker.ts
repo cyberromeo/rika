@@ -4,14 +4,10 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 const TRACKER_COL = 'user_tracker';
 const LOCAL_STORAGE_KEY = 'fmge_tracker_data_v1';
 
+const DEFAULT_USER_ID = 'NpFFvozZSFWnCKdmutkISEGPf8o2';
+
 function getUserId(): string {
-  try {
-    const tgUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-    if (tgUserId) return `tg_${tgUserId}`;
-  } catch {
-    // Ignore error
-  }
-  return import.meta.env.VITE_FIREBASE_USER_ID || 'default_user';
+  return import.meta.env.VITE_FIREBASE_USER_ID || DEFAULT_USER_ID;
 }
 
 export const SUBJECTS_LIST = [
