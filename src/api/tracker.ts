@@ -1,5 +1,8 @@
 const TARGET_USER_ID = 'NpFFvozZSFWnCKdmutkISEGPf8o2';
-const API_URL = `https://medx.srihari.quest/api/tracker?userId=${TARGET_USER_ID}`;
+const API_ENDPOINTS = [
+  `/api/tracker?userId=${TARGET_USER_ID}`,
+  `https://medx.srihari.quest/api/tracker?userId=${TARGET_USER_ID}`,
+];
 const LOCAL_STORAGE_KEY = 'fmge_tracker_data_v1';
 
 export const SUBJECTS_LIST = [
@@ -84,19 +87,21 @@ export function subscribeTrackerData(callback: (data: TrackerData) => void): () 
 }
 
 export async function getTrackerData(): Promise<TrackerData> {
-  try {
-    const res = await fetch(API_URL);
-    if (res.ok) {
-      const data = await res.json();
-      const merged: TrackerData = {
-        subjects: { ...INITIAL_STATE.subjects, ...(data.subjects || {}) },
-        gts: { ...INITIAL_STATE.gts, ...(data.gts || {}) },
-      };
-      saveLocalData(merged);
-      return merged;
+  for (const url of API_ENDPOINTS) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        const merged: TrackerData = {
+          subjects: { ...INITIAL_STATE.subjects, ...(data.subjects || {}) },
+          gts: { ...INITIAL_STATE.gts, ...(data.gts || {}) },
+        };
+        saveLocalData(merged);
+        return merged;
+      }
+    } catch (error) {
+      // try next endpoint
     }
-  } catch (error) {
-    console.error('Error fetching tracker data from API:', error);
   }
   return getLocalData() || INITIAL_STATE;
 }
@@ -113,14 +118,18 @@ export async function updateSubjectTracker(subject: string, field: string, value
   const updatedData: TrackerData = { ...current, subjects: updatedSubjects };
   saveLocalData(updatedData);
 
-  try {
-    await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: TARGET_USER_ID, subject, field, value }),
-    });
-  } catch (error) {
-    console.error('Error updating subject tracker via API:', error);
+  for (const url of API_ENDPOINTS) {
+    try {
+      const baseUrl = url.split('?')[0];
+      await fetch(baseUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: TARGET_USER_ID, subject, field, value }),
+      });
+      break;
+    } catch (error) {
+      // fallback
+    }
   }
 }
 
@@ -133,14 +142,18 @@ export async function updateGTTracker(gt: string, value: boolean): Promise<void>
   const updatedData: TrackerData = { ...current, gts: updatedGts };
   saveLocalData(updatedData);
 
-  try {
-    await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: TARGET_USER_ID, gt, value }),
-    });
-  } catch (error) {
-    console.error('Error updating GT tracker via API:', error);
+  for (const url of API_ENDPOINTS) {
+    try {
+      const baseUrl = url.split('?')[0];
+      await fetch(baseUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: TARGET_USER_ID, gt, value }),
+      });
+      break;
+    } catch (error) {
+      // fallback
+    }
   }
 }
 

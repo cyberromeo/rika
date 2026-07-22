@@ -1,6 +1,9 @@
-const API_URL = 'https://medx.srihari.quest/api/studytime';
 const PASSWORD = 'superstudiopro';
 const LOCAL_STORAGE_KEY = 'rika_studytime_data_v1';
+const API_ENDPOINTS = [
+  `/api/studytime`,
+  `https://medx.srihari.quest/api/studytime`,
+];
 
 export interface WeeklyDayLog {
   date: string;
@@ -96,21 +99,23 @@ function saveLocalState(state: StudyTimeState) {
 }
 
 export async function getStudyTimeState(): Promise<StudyTimeState> {
-  try {
-    const res = await fetch(`${API_URL}?password=${encodeURIComponent(PASSWORD)}`);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && data.state) {
-        const merged: StudyTimeState = {
-          ...DEFAULT_STATE,
-          ...data.state,
-        };
-        saveLocalState(merged);
-        return merged;
+  for (const url of API_ENDPOINTS) {
+    try {
+      const res = await fetch(`${url}?password=${encodeURIComponent(PASSWORD)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.state) {
+          const merged: StudyTimeState = {
+            ...DEFAULT_STATE,
+            ...data.state,
+          };
+          saveLocalState(merged);
+          return merged;
+        }
       }
+    } catch (error) {
+      // fallback to next
     }
-  } catch (error) {
-    console.error('Error fetching study time state from API:', error);
   }
   return getLocalState();
 }
@@ -136,25 +141,27 @@ export function subscribeStudyTimeData(callback: (state: StudyTimeState) => void
 }
 
 export async function postStudyTimeAction(action: string, payload: Record<string, any> = {}): Promise<StudyTimeState | null> {
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        password: PASSWORD,
-        action,
-        ...payload,
-      }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && data.state) {
-        saveLocalState(data.state);
-        return data.state;
+  for (const url of API_ENDPOINTS) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password: PASSWORD,
+          action,
+          ...payload,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.state) {
+          saveLocalState(data.state);
+          return data.state;
+        }
       }
+    } catch (error) {
+      // fallback
     }
-  } catch (error) {
-    console.error(`Error posting studytime action ${action}:`, error);
   }
   return null;
 }
