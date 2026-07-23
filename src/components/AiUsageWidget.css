@@ -63,7 +63,7 @@
 /* ─── Tiles Grid ──────────────────────────────────────────────────────────── */
 .ai-tiles {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
 }
 
@@ -83,7 +83,6 @@
 .ai-tile:nth-child(1) { animation-delay: 0.03s; }
 .ai-tile:nth-child(2) { animation-delay: 0.06s; }
 .ai-tile:nth-child(3) { animation-delay: 0.09s; }
-.ai-tile:nth-child(4) { animation-delay: 0.12s; }
 
 .ai-tile-label {
   font-size: 9px;
