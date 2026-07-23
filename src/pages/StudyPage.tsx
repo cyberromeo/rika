@@ -48,9 +48,6 @@ export default function StudyPage() {
   const [timerDuration, setTimerDuration] = useState<number>(3600); // in seconds
   const [secondsRemaining, setSecondsRemaining] = useState<number>(3600);
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
-  const [manualMinutes, setManualMinutes] = useState<string>('30');
-  const [logNote, setLogNote] = useState<string>('');
-  const [isSubmittingLog, setIsSubmittingLog] = useState<boolean>(false);
 
   // Guards one-time restore of the local timer from the cloud activeTimer
   const syncedFromCloud = useRef(false);
@@ -243,26 +240,6 @@ export default function StudyPage() {
     }
   };
 
-  const handleQuickLog = async (secs: number, mode: 'study' | 'pyq') => {
-    hapticFeedback('medium');
-    setIsSubmittingLog(true);
-    const updated = await logStudyTime(secs, mode, 'Quick Log');
-    if (updated) setStudyState(updated);
-    setIsSubmittingLog(false);
-  };
-
-  const handleManualSubmitLog = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const mins = parseInt(manualMinutes, 10);
-    if (isNaN(mins) || mins <= 0) return;
-    hapticFeedback('medium');
-    setIsSubmittingLog(true);
-    const updated = await logStudyTime(mins * 60, timerMode === 'pyq' ? 'pyq' : 'study', logNote || 'Manual Log');
-    if (updated) setStudyState(updated);
-    setIsSubmittingLog(false);
-    setLogNote('');
-  };
-
   // Derived progress values
   const progress = tracker ? calculateProgress(tracker) : 0;
   const completedItems = Math.round((progress / 100) * TOTAL_ITEMS);
@@ -294,13 +271,6 @@ export default function StudyPage() {
     <div className="page-enter study-page-container">
       {/* Header */}
       <div className="page-header">
-        <div className="study-header-badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-          </svg>
-          Study Hub
-        </div>
         <h1>FMGE & Study Tracker</h1>
         <div className="subtitle">Track 19 Subjects, Grand Tests & Daily Study Time</div>
       </div>
@@ -672,7 +642,7 @@ export default function StudyPage() {
 
             {/* Presets */}
             <div className="timer-presets-row">
-              {[15, 25, 45, 60, 90, 120].map(mins => (
+              {[25, 45, 60, 90].map(mins => (
                 <button
                   key={mins}
                   className={`preset-chip ${timerDuration === mins * 60 ? 'selected' : ''}`}
@@ -729,79 +699,6 @@ export default function StudyPage() {
                 <span>Finish & Log</span>
               </button>
             </div>
-          </div>
-
-          {/* Quick Manual Time Logger Card */}
-          <div className="study-card manual-log-card">
-            <h3 className="card-title-with-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="8" y1="13" x2="16" y2="13" />
-                <line x1="8" y1="17" x2="14" y2="17" />
-              </svg>
-              Quick Manual Time Log
-            </h3>
-            <div className="quick-add-buttons">
-              <button
-                disabled={isSubmittingLog}
-                onClick={() => handleQuickLog(15 * 60, 'study')}
-                className="quick-log-chip"
-              >
-                +15m Study
-              </button>
-              <button
-                disabled={isSubmittingLog}
-                onClick={() => handleQuickLog(30 * 60, 'study')}
-                className="quick-log-chip"
-              >
-                +30m Study
-              </button>
-              <button
-                disabled={isSubmittingLog}
-                onClick={() => handleQuickLog(60 * 60, 'study')}
-                className="quick-log-chip"
-              >
-                +1h Study
-              </button>
-              <button
-                disabled={isSubmittingLog}
-                onClick={() => handleQuickLog(30 * 60, 'pyq')}
-                className="quick-log-chip pyq"
-              >
-                +30m PYQs
-              </button>
-              <button
-                disabled={isSubmittingLog}
-                onClick={() => handleQuickLog(60 * 60, 'pyq')}
-                className="quick-log-chip pyq"
-              >
-                +1h PYQs
-              </button>
-            </div>
-
-            {/* Custom Input Form */}
-            <form onSubmit={handleManualSubmitLog} className="custom-log-form">
-              <input
-                type="number"
-                min="1"
-                max="720"
-                value={manualMinutes}
-                onChange={e => setManualMinutes(e.target.value)}
-                placeholder="Minutes"
-                className="log-input mins"
-              />
-              <input
-                type="text"
-                value={logNote}
-                onChange={e => setLogNote(e.target.value)}
-                placeholder="Note (e.g. Pathology Rev)"
-                className="log-input note"
-              />
-              <button type="submit" disabled={isSubmittingLog} className="log-submit-btn">
-                {isSubmittingLog ? 'Saving...' : 'Log Time'}
-              </button>
-            </form>
           </div>
 
           {/* Weekly Study History Breakdown */}

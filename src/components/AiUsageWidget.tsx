@@ -11,7 +11,6 @@ interface UsageData {
   rollingUsage?: UsageStat;
   weeklyUsage?: UsageStat;
   monthlyUsage?: UsageStat;
-  chatgptUsage?: UsageStat;
 }
 
 function parseOpenCodeUsage(text: string): Pick<UsageData, 'rollingUsage' | 'weeklyUsage' | 'monthlyUsage'> | null {
@@ -36,8 +35,7 @@ function hasUsageData(data: UsageData): boolean {
   return Boolean(
     data.rollingUsage ||
     data.weeklyUsage ||
-    data.monthlyUsage ||
-    data.chatgptUsage
+    data.monthlyUsage
   );
 }
 
@@ -75,22 +73,6 @@ export default function AiUsageWidget() {
             }
           } catch (err) {
             console.error('Failed to fetch OpenCode Usage', err);
-          }
-
-          try {
-            const response = await fetch('/api/chatgpt/backend-api/wham/usage', {
-              method: 'GET'
-            });
-            const json = await response.json();
-            if (json?.rate_limit?.primary_window) {
-              data.chatgptUsage = {
-                status: json.rate_limit.limit_reached ? 'rate-limited' : 'ok',
-                resetInSec: json.rate_limit.primary_window.reset_after_seconds,
-                usagePercent: json.rate_limit.primary_window.used_percent
-              };
-            }
-          } catch (err) {
-            console.error('Failed to fetch ChatGPT Usage', err);
           }
 
           setUsage(hasUsageData(data) ? data : null);
@@ -134,7 +116,6 @@ export default function AiUsageWidget() {
     { label: 'OpenCode 5Hr', short: '5Hr', stat: usage?.rollingUsage },
     { label: 'OpenCode Weekly', short: 'Wk', stat: usage?.weeklyUsage },
     { label: 'OpenCode Monthly', short: 'Mo', stat: usage?.monthlyUsage },
-    { label: 'ChatGPT Plus', short: 'GPT', stat: usage?.chatgptUsage },
   ];
 
   const visibleTiles = tiles.filter(t => t.stat);

@@ -44,50 +44,6 @@ async function fetchOpenCodeUsage() {
   return parseOpenCodeUsage(text);
 }
 
-async function fetchChatGptUsage() {
-  const authorization = process.env.CHATGPT_AUTHORIZATION;
-  const accountId = process.env.CHATGPT_ACCOUNT_ID;
-  if (!authorization || !accountId) {
-    throw new Error('Missing CHATGPT_AUTHORIZATION or CHATGPT_ACCOUNT_ID');
-  }
-
-  const headers = {
-    authorization,
-    'chatgpt-account-id': accountId,
-    'oai-language': process.env.CHATGPT_OAI_LANGUAGE || 'en-US',
-    originator: process.env.CHATGPT_ORIGINATOR || 'Codex Desktop',
-    Origin: 'https://chatgpt.com',
-    Referer: 'https://chatgpt.com/',
-    'User-Agent': process.env.CHATGPT_USER_AGENT || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
-  };
-
-  if (process.env.CHATGPT_COOKIE) {
-    headers.Cookie = process.env.CHATGPT_COOKIE;
-  }
-
-  const response = await fetch('https://chatgpt.com/backend-api/wham/usage', {
-    headers,
-  });
-
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`ChatGPT ${response.status}: ${text.slice(0, 200)}`);
-  }
-
-  const json = await response.json();
-  if (!json?.rate_limit?.primary_window) {
-    throw new Error('ChatGPT response did not include rate_limit.primary_window');
-  }
-
-  return {
-    chatgptUsage: {
-      status: json.rate_limit.limit_reached ? 'rate-limited' : 'ok',
-      resetInSec: json.rate_limit.primary_window.reset_after_seconds,
-      usagePercent: json.rate_limit.primary_window.used_percent,
-    },
-  };
-}
-
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
@@ -103,12 +59,6 @@ export default async function handler(req, res) {
     Object.assign(payload, await fetchOpenCodeUsage());
   } catch (error) {
     errors.push(error instanceof Error ? error.message : 'OpenCode request failed');
-  }
-
-  try {
-    Object.assign(payload, await fetchChatGptUsage());
-  } catch (error) {
-    errors.push(error instanceof Error ? error.message : 'ChatGPT request failed');
   }
 
   if (Object.keys(payload).length === 0) {
