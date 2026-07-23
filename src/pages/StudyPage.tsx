@@ -143,27 +143,26 @@ export default function StudyPage() {
     }
   }, [studyLoading, studyState]);
 
-  // Local focus timer tick effect
+  // Local focus timer tick — a single stable interval while running.
   useEffect(() => {
-    let interval: any = null;
-    if (isTimerRunning && secondsRemaining > 0) {
-      interval = setInterval(() => {
-        setSecondsRemaining(prev => prev - 1);
-      }, 1000);
-    } else if (isTimerRunning && secondsRemaining === 0) {
-      setIsTimerRunning(false);
-      hapticFeedback('heavy');
-      // Auto log session, then clear the cloud active timer.
-      const modeLogged = timerMode === 'break10' ? 'study' : timerMode;
-      logStudyTime(timerDuration, modeLogged, `${timerMode.toUpperCase()} Focus Session`).then(async (st) => {
-        if (st) setStudyState(st);
-        const st2 = await cancelCloudTimer();
-        if (st2) setStudyState(st2);
-      });
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    if (!isTimerRunning) return;
+    const id = setInterval(() => {
+      setSecondsRemaining(prev => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [isTimerRunning]);
+
+  // Completion — fires when the countdown reaches zero.
+  useEffect(() => {
+    if (!isTimerRunning || secondsRemaining > 0) return;
+    setIsTimerRunning(false);
+    hapticFeedback('heavy');
+    const modeLogged = timerMode === 'break10' ? 'study' : timerMode;
+    logStudyTime(timerDuration, modeLogged, `${timerMode.toUpperCase()} Focus Session`).then(async (st) => {
+      if (st) setStudyState(st);
+      const st2 = await cancelCloudTimer();
+      if (st2) setStudyState(st2);
+    });
   }, [isTimerRunning, secondsRemaining, timerDuration, timerMode]);
 
   const handleSubTabChange = (next: StudySubTab) => {
@@ -193,50 +192,46 @@ export default function StudyPage() {
     await updateGTTracker(gt, newVal);
   }, [tracker]);
 
-  // Focus Timer Actions
+  // Focus Timer Actions — local state changes instantly, cloud sync fires in the background.
   const handleSelectPreset = (mins: number) => {
     hapticFeedback('light');
     const secs = mins * 60;
     setTimerDuration(secs);
     setSecondsRemaining(secs);
     setIsTimerRunning(false);
-    // Picking a new preset abandons any in-flight cloud timer so Start creates a fresh one.
     if (studyState?.activeTimer && !studyState.activeTimer.completed) {
       cancelCloudTimer().then(st => { if (st) setStudyState(st); });
     }
   };
 
-  const handleToggleTimer = async () => {
+  const handleToggleTimer = () => {
     hapticFeedback('medium');
     if (!isTimerRunning) {
       const at = studyState?.activeTimer;
       if (at && !at.completed && !at.isRunning && (at.secondsRemaining ?? at.durationSeconds ?? 0) > 0) {
         // Resume an existing paused cloud timer.
-        const st = await resumeCloudTimer();
-        if (st) setStudyState(st);
         const remaining = at.secondsRemaining ?? at.durationSeconds ?? timerDuration;
         setSecondsRemaining(remaining);
         setTimerDuration(remaining);
+        resumeCloudTimer().then(st => { if (st) setStudyState(st); });
       } else {
         // Start a fresh cloud timer with the current local preset.
-        const st = await startCloudTimer(timerDuration, timerMode, `${timerMode.toUpperCase()} Focus Session`);
-        if (st) setStudyState(st);
+        startCloudTimer(timerDuration, timerMode, `${timerMode.toUpperCase()} Focus Session`)
+          .then(st => { if (st) setStudyState(st); });
       }
       setIsTimerRunning(true);
     } else {
-      const st = await pauseCloudTimer();
-      if (st) setStudyState(st);
       setIsTimerRunning(false);
+      pauseCloudTimer().then(st => { if (st) setStudyState(st); });
     }
   };
 
-  const handleResetTimer = async () => {
+  const handleResetTimer = () => {
     hapticFeedback('light');
     setIsTimerRunning(false);
     setSecondsRemaining(timerDuration);
     if (studyState?.activeTimer && !studyState.activeTimer.completed) {
-      const st = await cancelCloudTimer();
-      if (st) setStudyState(st);
+      cancelCloudTimer().then(st => { if (st) setStudyState(st); });
     }
   };
 
