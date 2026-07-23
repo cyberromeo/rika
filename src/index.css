@@ -2824,7 +2824,7 @@ input::placeholder, textarea::placeholder {
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   padding: 3px;
-  margin-bottom: 20px;
+  margin: 0 20px 20px;
   backdrop-filter: blur(12px);
 }
 
@@ -2852,6 +2852,13 @@ input::placeholder, textarea::placeholder {
   color: #ffffff;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Study content wrappers */
+.study-overview-content,
+.study-tracker-content,
+.study-timer-content {
+  padding: 0 20px;
 }
 
 /* Cards Base */
