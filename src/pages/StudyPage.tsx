@@ -336,7 +336,9 @@ export default function StudyPage() {
             {/* Streak Card */}
             <div className="study-card stat-card streak-card">
               <div className="stat-icon-wrapper fire">
-                🔥
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+                </svg>
               </div>
               <div className="stat-card-info">
                 <div className="stat-label">Study Streak</div>
@@ -349,7 +351,12 @@ export default function StudyPage() {
           {/* Quick Launch Focus Timer */}
           <div className="study-card quick-timer-card">
             <div className="card-title-row">
-              <h3>⚡ Quick Focus Launcher</h3>
+              <h3 className="card-title-with-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                Quick Focus Launcher
+              </h3>
               <span className="card-sub-tag">Synced to API</span>
             </div>
             <div className="quick-buttons-row">
@@ -361,7 +368,13 @@ export default function StudyPage() {
                   handleSubTabChange('timer');
                 }}
               >
-                <span className="btn-icon">⏱️</span>
+                <span className="btn-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="13" r="8" />
+                    <path d="M12 9v4l2 2" />
+                    <path d="M9 2h6" />
+                  </svg>
+                </span>
                 <span className="btn-text">1 Hour Study</span>
               </button>
               <button
@@ -372,7 +385,13 @@ export default function StudyPage() {
                   handleSubTabChange('timer');
                 }}
               >
-                <span className="btn-icon">🎯</span>
+                <span className="btn-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <circle cx="12" cy="12" r="6" />
+                    <circle cx="12" cy="12" r="2" />
+                  </svg>
+                </span>
                 <span className="btn-text">45m PYQ</span>
               </button>
               <button
@@ -383,7 +402,15 @@ export default function StudyPage() {
                   handleSubTabChange('timer');
                 }}
               >
-                <span className="btn-icon">☕</span>
+                <span className="btn-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+                    <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+                    <line x1="6" y1="1" x2="6" y2="4" />
+                    <line x1="10" y1="1" x2="10" y2="4" />
+                    <line x1="14" y1="1" x2="14" y2="4" />
+                  </svg>
+                </span>
                 <span className="btn-text">10m Break</span>
               </button>
             </div>
@@ -415,7 +442,17 @@ export default function StudyPage() {
               {/* Grand Tests Section */}
               <div className="study-card gt-card">
                 <div className="card-title-row">
-                  <h3>🏆 Grand Tests (GTs)</h3>
+                  <h3 className="card-title-with-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                      <path d="M4 22h16" />
+                      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                      <path d="M18 2H6v7a6 6 0 0 0 12 0V2z" />
+                    </svg>
+                    Grand Tests (GTs)
+                  </h3>
                   <span className="gt-count">{completedGTs} / 7 Completed</span>
                 </div>
                 <div className="gt-grid">
@@ -446,7 +483,13 @@ export default function StudyPage() {
 
               {/* 19 Subjects Section */}
               <div className="subjects-header">
-                <h3>📚 19 Medical Subjects</h3>
+                <h3 className="subjects-title-with-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  </svg>
+                  19 Medical Subjects
+                </h3>
                 <span className="subjects-sub">Tap checkboxes to sync progress live</span>
               </div>
 
@@ -508,19 +551,35 @@ export default function StudyPage() {
                 className={`mode-btn ${timerMode === 'study' ? 'active-study' : ''}`}
                 onClick={() => { setTimerMode('study'); handleSelectPreset(60); }}
               >
-                📖 Study Mode
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+                <span>Study Mode</span>
               </button>
               <button
                 className={`mode-btn ${timerMode === 'pyq' ? 'active-pyq' : ''}`}
                 onClick={() => { setTimerMode('pyq'); handleSelectPreset(45); }}
               >
-                🎯 PYQ Mode
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <circle cx="12" cy="12" r="6" />
+                  <circle cx="12" cy="12" r="2" />
+                </svg>
+                <span>PYQ Mode</span>
               </button>
               <button
                 className={`mode-btn ${timerMode === 'break10' ? 'active-break' : ''}`}
                 onClick={() => { setTimerMode('break10'); handleSelectPreset(10); }}
               >
-                ☕ Break
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+                  <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+                  <line x1="6" y1="1" x2="6" y2="4" />
+                  <line x1="10" y1="1" x2="10" y2="4" />
+                  <line x1="14" y1="1" x2="14" y2="4" />
+                </svg>
+                <span>Break</span>
               </button>
             </div>
 
@@ -549,11 +608,25 @@ export default function StudyPage() {
                 className={`timer-play-btn ${isTimerRunning ? 'pause' : 'start'}`}
                 onClick={handleToggleTimer}
               >
-                {isTimerRunning ? '⏸️ Pause' : '▶️ Start Focus Timer'}
+                {isTimerRunning ? (
+                  <>
+                    <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" /></svg>
+                    <span>Pause</span>
+                  </>
+                ) : (
+                  <>
+                    <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4" /></svg>
+                    <span>Start Focus Timer</span>
+                  </>
+                )}
               </button>
 
               <button className="timer-reset-btn" onClick={handleResetTimer}>
-                🔄 Reset
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 4 23 10 17 10" />
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                </svg>
+                <span>Reset</span>
               </button>
 
               <button
@@ -569,14 +642,25 @@ export default function StudyPage() {
                   }
                 }}
               >
-                ✅ Finish & Log
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span>Finish & Log</span>
               </button>
             </div>
           </div>
 
           {/* Quick Manual Time Logger Card */}
           <div className="study-card manual-log-card">
-            <h3>📝 Quick Manual Time Log</h3>
+            <h3 className="card-title-with-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="8" y1="13" x2="16" y2="13" />
+                <line x1="8" y1="17" x2="14" y2="17" />
+              </svg>
+              Quick Manual Time Log
+            </h3>
             <div className="quick-add-buttons">
               <button
                 disabled={isSubmittingLog}
@@ -643,7 +727,17 @@ export default function StudyPage() {
           {studyState && studyState.weeklyHistory && (
             <div className="study-card weekly-chart-card">
               <div className="card-title-row">
-                <h3>📊 Weekly Study Breakdown</h3>
+                <h3 className="card-title-with-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="6" x2="15" y2="6" />
+                    <line x1="3" y1="18" x2="9" y2="18" />
+                    <line x1="18" y1="20" x2="18" y2="10" />
+                    <line x1="12" y1="20" x2="12" y2="4" />
+                    <line x1="6" y1="20" x2="6" y2="14" />
+                  </svg>
+                  Weekly Study Breakdown
+                </h3>
                 <span className="weekly-total">{studyState.weeklyGrandTotalHours || 0} hrs Total</span>
               </div>
 
