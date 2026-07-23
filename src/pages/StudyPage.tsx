@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { hapticFeedback } from '../telegram';
 import {
   getTrackerData,
@@ -52,6 +52,12 @@ export default function StudyPage() {
   const [logNote, setLogNote] = useState<string>('');
   const [isSubmittingLog, setIsSubmittingLog] = useState<boolean>(false);
 
+  // Guards one-time restore of the local timer from the cloud activeTimer
+  const syncedFromCloud = useRef(false);
+
+  const toLocalMode = (m: string): 'study' | 'pyq' | 'break10' =>
+    m === 'pyq' ? 'pyq' : m === 'study' ? 'study' : 'break10';
+
   // Countdown timer effect for Exam (Jan 9, 2027)
   useEffect(() => {
     const examDate = new Date('2027-01-09T00:00:00').getTime();
@@ -94,6 +100,52 @@ export default function StudyPage() {
     return () => unsubscribe();
   }, []);
 
+  // One-time restore of the local focus timer from the cloud activeTimer
+  // so a session started on another device / before a reload continues here.
+  useEffect(() => {
+    if (syncedFromCloud.current) return;
+    if (studyLoading || !studyState) return;
+    syncedFromCloud.current = true;
+
+    const at = studyState.activeTimer;
+    if (!at) return;
+
+    const localMode = toLocalMode(at.mode);
+
+    if (at.completed) {
+      // Stale completed timer left in the cloud — clear it.
+      cancelCloudTimer().then(st => { if (st) setStudyState(st); });
+      return;
+    }
+
+    if (at.isRunning) {
+      const startMs = new Date(at.startTime).getTime();
+      const elapsed = Math.floor((Date.now() - startMs) / 1000);
+      const remaining = Math.max(0, (at.durationSeconds || 0) - elapsed);
+      setTimerMode(localMode);
+      setTimerDuration(at.durationSeconds || remaining);
+      setSecondsRemaining(remaining);
+      setIsTimerRunning(remaining > 0);
+      if (remaining === 0) {
+        // It finished while we were away — log it and clear the cloud timer.
+        const modeLogged = localMode === 'break10' ? 'study' : localMode;
+        logStudyTime(at.durationSeconds || 0, modeLogged, `${localMode.toUpperCase()} Focus Session`)
+          .then(async (st) => {
+            if (st) setStudyState(st);
+            const st2 = await cancelCloudTimer();
+            if (st2) setStudyState(st2);
+          });
+      }
+    } else {
+      // Paused timer — restore remaining, keep stopped.
+      const remaining = at.secondsRemaining ?? at.durationSeconds ?? 0;
+      setTimerMode(localMode);
+      setTimerDuration(remaining > 0 ? remaining : 60);
+      setSecondsRemaining(remaining);
+      setIsTimerRunning(false);
+    }
+  }, [studyLoading, studyState]);
+
   // Local focus timer tick effect
   useEffect(() => {
     let interval: any = null;
@@ -104,10 +156,12 @@ export default function StudyPage() {
     } else if (isTimerRunning && secondsRemaining === 0) {
       setIsTimerRunning(false);
       hapticFeedback('heavy');
-      // Auto log session
+      // Auto log session, then clear the cloud active timer.
       const modeLogged = timerMode === 'break10' ? 'study' : timerMode;
-      logStudyTime(timerDuration, modeLogged, `${timerMode.toUpperCase()} Focus Session`).then(st => {
+      logStudyTime(timerDuration, modeLogged, `${timerMode.toUpperCase()} Focus Session`).then(async (st) => {
         if (st) setStudyState(st);
+        const st2 = await cancelCloudTimer();
+        if (st2) setStudyState(st2);
       });
     }
     return () => {
@@ -149,17 +203,44 @@ export default function StudyPage() {
     setTimerDuration(secs);
     setSecondsRemaining(secs);
     setIsTimerRunning(false);
+    // Picking a new preset abandons any in-flight cloud timer so Start creates a fresh one.
+    if (studyState?.activeTimer && !studyState.activeTimer.completed) {
+      cancelCloudTimer().then(st => { if (st) setStudyState(st); });
+    }
   };
 
-  const handleToggleTimer = () => {
+  const handleToggleTimer = async () => {
     hapticFeedback('medium');
-    setIsTimerRunning(!isTimerRunning);
+    if (!isTimerRunning) {
+      const at = studyState?.activeTimer;
+      if (at && !at.completed && !at.isRunning && (at.secondsRemaining ?? at.durationSeconds ?? 0) > 0) {
+        // Resume an existing paused cloud timer.
+        const st = await resumeCloudTimer();
+        if (st) setStudyState(st);
+        const remaining = at.secondsRemaining ?? at.durationSeconds ?? timerDuration;
+        setSecondsRemaining(remaining);
+        setTimerDuration(remaining);
+      } else {
+        // Start a fresh cloud timer with the current local preset.
+        const st = await startCloudTimer(timerDuration, timerMode, `${timerMode.toUpperCase()} Focus Session`);
+        if (st) setStudyState(st);
+      }
+      setIsTimerRunning(true);
+    } else {
+      const st = await pauseCloudTimer();
+      if (st) setStudyState(st);
+      setIsTimerRunning(false);
+    }
   };
 
-  const handleResetTimer = () => {
+  const handleResetTimer = async () => {
     hapticFeedback('light');
     setIsTimerRunning(false);
     setSecondsRemaining(timerDuration);
+    if (studyState?.activeTimer && !studyState.activeTimer.completed) {
+      const st = await cancelCloudTimer();
+      if (st) setStudyState(st);
+    }
   };
 
   const handleQuickLog = async (secs: number, mode: 'study' | 'pyq') => {
