@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { App as F7App, Page, Toolbar, ToolbarPane, Link } from 'framework7-react';
 import { TaskProvider } from './store/taskStore';
 import { PowerProvider } from './store/powerStore';
@@ -61,6 +61,38 @@ function AppContent() {
 
   const barsHidden = cartOpen || chartOpen;
 
+  // Framework7 v9's iOS tabbar owns the touch path: initTabbarHighlight()
+  // calls preventDefault() on touchstart (killing the native click) and then
+  // re-emits a synthetic .click() from its own pointerup handler. When that
+  // synthetic click doesn't land — Telegram's WebView, or a pointercancel from
+  // finger jitter — the first tap is swallowed and only the second registers.
+  //
+  // Fix: listen for pointerup ourselves in the CAPTURE phase, so we switch tabs
+  // before F7's document-level (bubble phase) handler can interfere. Mouse taps
+  // still arrive via the Link's onClick; handleTabChange no-ops on re-taps, so
+  // the two paths can't double-fire.
+  const f7ToolbarRef = useRef<{ el: HTMLElement } | null>(null);
+
+  useEffect(() => {
+    const root = f7ToolbarRef.current?.el ?? null;
+    if (!root) return;
+
+    const onPointerUp = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch') return;
+      const link = (e.target as HTMLElement | null)?.closest?.('.tab-link');
+      if (!link || !root.contains(link)) return;
+      const index = Array.prototype.indexOf.call(
+        root.querySelectorAll('.tab-link'),
+        link
+      );
+      const tab = TABS[index];
+      if (tab) handleTabChange(tab.id);
+    };
+
+    root.addEventListener('pointerup', onPointerUp, true);
+    return () => root.removeEventListener('pointerup', onPointerUp, true);
+  }, [activeTab]);
+
   return (
     <F7App theme="ios" darkMode className="rika-app">
       <Page pageContent={false} className="app-shell" noNavbar noSwipeback>
@@ -89,6 +121,7 @@ function AppContent() {
           tabbar
           icons
           bottom
+          ref={f7ToolbarRef as never}
           className={`rika-tabbar ${barsHidden ? 'toolbar-hidden' : ''}`}
         >
           <ToolbarPane>
