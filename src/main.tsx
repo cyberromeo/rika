@@ -1,8 +1,18 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+// NOTE: must be 'framework7/lite' — framework7-react imports the same module,
+// and the plugin has to be registered on that exact class instance.
+import Framework7 from 'framework7/lite';
+import Framework7React from 'framework7-react';
 import { initTelegram } from './telegram';
 import App from './App';
+// Framework7 core + icons. Imported BEFORE index.css so the app's own rules
+// win wherever the two overlap (see the F7 overrides block in index.css).
+import 'framework7/css';
+import 'framework7-icons/css/framework7-icons.css';
 import './index.css';
+
+Framework7.use(Framework7React);
 
 // Initialize Telegram WebApp
 const tg = initTelegram();

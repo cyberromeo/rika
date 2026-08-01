@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { App as F7App, Page, Toolbar, ToolbarPane, Link } from 'framework7-react';
 import { TaskProvider } from './store/taskStore';
 import { PowerProvider } from './store/powerStore';
 import HomePage from './pages/HomePage';
@@ -10,6 +11,13 @@ import UnauthorizedScreen from './components/UnauthorizedScreen';
 import { hapticFeedback } from './telegram';
 
 type TabId = 'home' | 'tasks' | 'calendar' | 'study';
+
+const TABS: { id: TabId; label: string; icon: string }[] = [
+  { id: 'home', label: 'Home', icon: 'f7:house_fill' },
+  { id: 'tasks', label: 'Tasks', icon: 'f7:checkmark_circle_fill' },
+  { id: 'calendar', label: 'Calendar', icon: 'f7:calendar_fill' },
+  { id: 'study', label: 'Study', icon: 'f7:book_fill' },
+];
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<TabId>('home');
@@ -51,93 +59,62 @@ function AppContent() {
     }
   };
 
+  const barsHidden = cartOpen || chartOpen;
+
   return (
-    <div className="app-shell">
-      {/* Page Content */}
-      <div className="page-content">
-        {renderPage()}
-      </div>
+    <F7App theme="ios" darkMode className="rika-app">
+      <Page pageContent={false} className="app-shell" noNavbar noSwipeback>
+        {/* Scrollable content — our own container, deliberately NOT .page-content
+            (that class belongs to Framework7 core and brings height:100%). */}
+        <div className="app-scroll">
+          {renderPage()}
+        </div>
 
-      {/* FAB */}
-      <button
-        className={`fab ${isModalOpen ? 'open' : ''} ${(cartOpen || chartOpen || activeTab !== 'tasks') ? 'hidden' : ''}`}
-        onClick={() => openAddModal()}
-        aria-label="Add new task"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-      </button>
-
-      {/* iOS Liquid Glass Tab Bar */}
-      <nav className={`bottom-nav ${(cartOpen || chartOpen) ? 'hidden' : ''}`} role="tablist">
+        {/* FAB */}
         <button
-          className={`nav-btn ${activeTab === 'home' ? 'active' : ''}`}
-          onClick={() => handleTabChange('home')}
-          role="tab"
-          aria-selected={activeTab === 'home'}
-          aria-label="Home"
+          className={`fab ${isModalOpen ? 'open' : ''} ${(barsHidden || activeTab !== 'tasks') ? 'hidden' : ''}`}
+          onClick={() => openAddModal()}
+          aria-label="Add new task"
         >
-          <svg viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-            <polyline points="9 22 9 12 15 12 15 22" />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          <span>Home</span>
         </button>
 
-        <button
-          className={`nav-btn ${activeTab === 'tasks' ? 'active' : ''}`}
-          onClick={() => handleTabChange('tasks')}
-          role="tab"
-          aria-selected={activeTab === 'tasks'}
-          aria-label="Tasks"
+        {/* iOS 26 liquid-glass tabbar. The sliding pill (.tab-link-highlight) is
+            created and repositioned by f7.toolbar.setHighlight(), which the
+            Toolbar component calls in a layout effect on every render. */}
+        <Toolbar
+          tabbar
+          icons
+          bottom
+          className={`rika-tabbar ${barsHidden ? 'toolbar-hidden' : ''}`}
         >
-          <svg viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 11l3 3L22 4" />
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-          </svg>
-          <span>Tasks</span>
-        </button>
+          <ToolbarPane>
+            {TABS.map((tab) => (
+              <Link
+                key={tab.id}
+                href={false}
+                tabLink
+                tabLinkActive={activeTab === tab.id}
+                iconIos={tab.icon}
+                text={tab.label}
+                onClick={() => handleTabChange(tab.id)}
+                aria-label={tab.label}
+              />
+            ))}
+          </ToolbarPane>
+        </Toolbar>
 
-        <button
-          className={`nav-btn ${activeTab === 'calendar' ? 'active' : ''}`}
-          onClick={() => handleTabChange('calendar')}
-          role="tab"
-          aria-selected={activeTab === 'calendar'}
-          aria-label="Calendar"
-        >
-          <svg viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-            <line x1="16" y1="2" x2="16" y2="6" />
-            <line x1="8" y1="2" x2="8" y2="6" />
-            <line x1="3" y1="10" x2="21" y2="10" />
-          </svg>
-          <span>Calendar</span>
-        </button>
-
-        <button
-          className={`nav-btn ${activeTab === 'study' ? 'active' : ''}`}
-          onClick={() => handleTabChange('study')}
-          role="tab"
-          aria-selected={activeTab === 'study'}
-          aria-label="Study"
-        >
-          <svg viewBox="0 0 24 24" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-          </svg>
-          <span>Study</span>
-        </button>
-      </nav>
-
-      {/* Add Task Modal */}
-      <AddTaskModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        initialDate={modalDate}
-      />
-    </div>
+        {/* Add Task Modal */}
+        <AddTaskModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          initialDate={modalDate}
+        />
+      </Page>
+    </F7App>
   );
 }
 

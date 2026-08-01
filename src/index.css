@@ -49,7 +49,9 @@
   --transition-spring: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   --transition-ios: 0.38s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 
-  --bottom-nav-height: 56px;
+  /* Matches Framework7's --f7-tabbar-icons-height (ios). Drives the bottom
+     padding on .app-scroll and the FAB's offset. */
+  --bottom-nav-height: 80px;
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 
   /* Modern system font stack – SF Pro prioritized */
@@ -61,6 +63,34 @@
   background-color: var(--tg-theme-bg-color);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Framework7 interop ─────────────────────────────────────────────────────
+   framework7/css is imported before this file (see main.tsx), so everything
+   here wins on cascade order at equal specificity. Two of F7's rules are bare
+   element selectors and would otherwise reach the whole app. */
+
+:root {
+  /* Point F7's own tokens at this app's values, so anything F7 renders
+     (the tabbar) inherits the same type and accent as everything else. */
+  --f7-font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    'Helvetica Neue', 'Segoe UI', system-ui, sans-serif;
+  --f7-font-size: 15px;
+  --f7-line-height: 1.5;
+  --f7-text-color: var(--tg-theme-text-color);
+  --f7-theme-color: var(--tg-theme-button-color);
+  --f7-page-bg-color: #000000;
+}
+
+/* framework7.css:4251 sets `button { appearance: none; width: 100% }`, which
+   would stretch all 41 buttons in this app. */
+button {
+  width: auto;
+}
+
+/* framework7.css:244 sets `p { margin: 1em 0 }`, beating the `*` reset above. */
+p {
+  margin: 0;
 }
 
 /* ─── Reset & Base ───────────────────────────────────────────────────────── */
@@ -120,6 +150,8 @@ input::placeholder, textarea::placeholder {
 }
 
 /* ─── App Shell ──────────────────────────────────────────────────────────── */
+/* .app-shell is also Framework7's .page (position:absolute, inset 0), so the
+   flex column below lays out on top of that rather than fighting it. */
 .app-shell {
   display: flex;
   flex-direction: column;
@@ -132,7 +164,7 @@ input::placeholder, textarea::placeholder {
   background: #000000;
 }
 
-.page-content {
+.app-scroll {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
@@ -141,12 +173,12 @@ input::placeholder, textarea::placeholder {
 }
 
 /* Invisible scrollbar */
-.page-content::-webkit-scrollbar {
+.app-scroll::-webkit-scrollbar {
   width: 0;
   display: none;
 }
 
-.page-content {
+.app-scroll {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -178,88 +210,52 @@ input::placeholder, textarea::placeholder {
   font-weight: 400;
 }
 
-/* ─── iOS 26 Liquid Glass Tab Bar ────────────────────────────────────────── */
-.bottom-nav {
-  position: fixed;
-  bottom: calc(12px + var(--safe-area-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 6px 8px;
-  border-radius: var(--radius-xl);
+/* ─── iOS 26 Liquid Glass Tabbar (Framework7) ───────────────────────────────
+   The tabbar markup, the glass pane and the sliding pill (.tab-link-highlight)
+   all come from Framework7 core's ios theme. What follows only re-tints F7's
+   tokens to this app's pitch-black palette and swaps the pill's 300ms ease for
+   the app's spring curve. Structure/animation logic lives in F7, not here. */
+.rika-tabbar {
+  /* Sit in the same stacking band the old .bottom-nav used, so the cart (200),
+     modal (200) and power-chart (1000) overlays keep covering it. F7's default
+     is 600, which would punch through all three. */
   z-index: 100;
+}
 
-  /* Liquid Glass Material */
-  background: var(--liquid-glass-bg);
+/* Glass pane: F7's own shadow stack (the iOS 26 rim light) over the app's
+   liquid-glass tint instead of F7's dark-grey default. */
+.rika-tabbar {
+  --f7-glass-bg-color: var(--liquid-glass-bg);
+  /* Bottom fade behind the pane resolves to pure black, not rgba(0,0,0,0.5). */
+  --f7-toolbar-bg-color: #000000;
+}
+
+.rika-tabbar .toolbar-pane {
   backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
   -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
-  border: 1px solid var(--liquid-glass-border);
-  box-shadow:
-    0 0 0 0.5px rgba(255, 255, 255, 0.05),
-    0 8px 40px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 var(--liquid-glass-highlight);
 }
 
-/* Remove the old top border */
-.bottom-nav::before {
-  display: none;
+/* Icons + labels */
+.rika-tabbar {
+  --f7-tabbar-icon-size: 26px;
+  --f7-tabbar-label-font-size: 11px;
+  --f7-tabbar-label-font-weight: 600;
+  --f7-tabbar-link-inactive-color: rgba(255, 255, 255, 0.5);
+  --f7-tabbar-link-active-color: #ffffff;
 }
 
-.nav-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 16px;
-  border-radius: calc(var(--radius-xl) - 4px);
-  transition: all var(--transition-ios);
-  position: relative;
-  overflow: hidden;
+/* The sliding pill. F7 animates `transform` on this element via setHighlight();
+   overriding transition-duration/timing-function is what makes it spring. */
+.rika-tabbar .tab-link-highlight,
+.rika-tabbar .tab-link-highlight::before,
+.rika-tabbar .tab-link-highlight::after {
+  transition-duration: 0.4s;
+  transition-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.nav-btn svg {
-  width: 20px;
-  height: 20px;
-  stroke: rgba(255, 255, 255, 0.5);
-  fill: none;
-  transition: all var(--transition-ios);
-  flex-shrink: 0;
-}
-
-.nav-btn span {
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
-  transition: all var(--transition-ios);
-  letter-spacing: -0.1px;
-  max-width: 0;
-  overflow: hidden;
-  opacity: 0;
-  white-space: nowrap;
-}
-
-/* Active tab – pill expands with label */
-.nav-btn.active {
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-
-.nav-btn.active svg {
-  stroke: #ffffff;
-}
-
-.nav-btn.active span {
-  max-width: 80px;
-  opacity: 1;
-  color: #ffffff;
-}
-
-/* Ripple on tap */
-.nav-btn:active {
-  transform: scale(0.94);
+.rika-tabbar {
+  --f7-tabbar-link-highlight-bg-color: rgba(255, 255, 255, 0.12);
+  --f7-tabbar-link-highlight-active-bg-color: rgba(255, 255, 255, 0.18);
 }
 
 /* ─── FAB (Floating Action Button) ───────────────────────────────────────── */
@@ -300,13 +296,7 @@ input::placeholder, textarea::placeholder {
   }
 }
 
-/* Hide nav & FAB when cart is open */
-.bottom-nav.hidden {
-  transform: translateX(-50%) translateY(calc(100% + 20px));
-  opacity: 0;
-  pointer-events: none;
-}
-
+/* Hide FAB when cart is open. The tabbar uses F7's own .toolbar-hidden. */
 .fab.hidden {
   transform: translateY(calc(100% + 40px));
   opacity: 0;
