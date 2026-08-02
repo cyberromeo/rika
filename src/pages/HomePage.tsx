@@ -4,14 +4,16 @@ import { isToday, isBefore, parseISO, startOfDay } from 'date-fns';
 import PowerWidget from '../components/PowerWidget';
 import AiUsageWidget from '../components/AiUsageWidget';
 import FmgeProgressWidget from '../components/FmgeProgressWidget';
+import GymRecoveryWidget from '../components/GymRecoveryWidget';
 
 interface HomePageProps {
   chartOpen: boolean;
   setChartOpen: (open: boolean) => void;
   onNavigateFmge: () => void;
+  onNavigateGym: () => void;
 }
 
-export default function HomePage({ chartOpen, setChartOpen, onNavigateFmge }: HomePageProps) {
+export default function HomePage({ chartOpen, setChartOpen, onNavigateFmge, onNavigateGym }: HomePageProps) {
   const { tasks } = useTasks();
 
   const greeting = (() => {
@@ -50,6 +52,7 @@ export default function HomePage({ chartOpen, setChartOpen, onNavigateFmge }: Ho
       <div className="home-widgets">
         <AiUsageWidget />
         <FmgeProgressWidget onNavigate={onNavigateFmge} />
+        <GymRecoveryWidget onNavigate={onNavigateGym} />
         <PowerWidget chartOpen={chartOpen} setChartOpen={setChartOpen} />
       </div>
     </div>

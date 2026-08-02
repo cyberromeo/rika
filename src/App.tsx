@@ -6,17 +6,19 @@ import HomePage from './pages/HomePage';
 import TasksPage from './pages/TasksPage';
 import CalendarPage from './pages/CalendarPage';
 import StudyPage from './pages/StudyPage';
+import GymPage from './pages/GymPage';
 import AddTaskModal from './components/AddTaskModal';
 import UnauthorizedScreen from './components/UnauthorizedScreen';
 import { hapticFeedback } from './telegram';
 
-type TabId = 'home' | 'tasks' | 'calendar' | 'study';
+type TabId = 'home' | 'tasks' | 'calendar' | 'study' | 'gym';
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'home', label: 'Home', icon: 'f7:house_fill' },
   { id: 'tasks', label: 'Tasks', icon: 'f7:checkmark_circle_fill' },
   { id: 'calendar', label: 'Calendar', icon: 'f7:calendar_fill' },
   { id: 'study', label: 'Study', icon: 'f7:book_fill' },
+  { id: 'gym', label: 'Gym', icon: 'f7:flame_fill' },
 ];
 
 function AppContent() {
@@ -48,6 +50,7 @@ function AppContent() {
             chartOpen={chartOpen}
             setChartOpen={setChartOpen}
             onNavigateFmge={() => handleTabChange('study')}
+            onNavigateGym={() => handleTabChange('gym')}
           />
         );
       case 'tasks':
@@ -56,6 +59,8 @@ function AppContent() {
         return <CalendarPage onAddTask={openAddModal} />;
       case 'study':
         return <StudyPage />;
+      case 'gym':
+        return <GymPage />;
     }
   };
 
