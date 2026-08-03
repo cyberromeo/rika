@@ -44,6 +44,43 @@
   --liquid-glass-border: rgba(255, 255, 255, 0.12);
   --liquid-glass-highlight: rgba(255, 255, 255, 0.06);
 
+  /* ─── Card surface ────────────────────────────────────────────────────────
+     One recipe for every raised surface in the app (home widgets, study
+     cards, gym cards). Before this, each card family carried its own
+     background/border/shadow triple and they had visibly drifted apart:
+     0.04 flat vs a 180deg wash vs a 135deg green-blue tint, three different
+     shadow depths. Accent colour now lives only in *content* — rings,
+     numbers, chips — never in the container. */
+  --surface-1: linear-gradient(180deg, rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.022) 100%);
+  --surface-1-active: linear-gradient(180deg, rgba(255, 255, 255, 0.085) 0%, rgba(255, 255, 255, 0.04) 100%);
+  --surface-border: rgba(255, 255, 255, 0.09);
+  --surface-border-strong: rgba(255, 255, 255, 0.14);
+  --surface-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 6px 20px rgba(0, 0, 0, 0.32);
+  --surface-shadow-active: 0 1px 2px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.4);
+  /* Hairline top highlight — the thing that reads as "glass" on OLED black. */
+  --surface-sheen: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+  /* Card padding + the inset every page gutter uses */
+  --card-pad: 16px;
+  --page-inset: 20px;
+
+  /* ─── Type ramp ───────────────────────────────────────────────────────────
+     Card titles were 13px/700 in the gym widget and 15px/600 in the power
+     widget; the same "title" role now resolves to one value. Optical letter-
+     spacing tightens as size grows, which is what SF Pro does natively. */
+  --text-title: 15px;      /* card title */
+  --text-body: 14px;
+  --text-label: 12px;      /* stat labels, chips */
+  --text-micro: 11px;      /* uppercase eyebrows */
+  --tracking-tight: -0.24px;
+  --tracking-wide: 0.32px;
+
+  /* Accents, named by meaning rather than by page */
+  --accent-blue: #0a84ff;
+  --accent-green: #30d158;
+  --accent-orange: #ff9f0a;
+  --accent-red: #ff453a;
+
   --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-spring: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -305,12 +342,12 @@ input::placeholder, textarea::placeholder {
 
 /* ─── Section Headers ────────────────────────────────────────────────────── */
 .section-header {
-  font-size: 13px;
+  font-size: var(--text-micro);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.7px;
   color: var(--tg-theme-section-header-text-color);
-  padding: 20px 20px 8px;
+  padding: 22px var(--page-inset) 8px;
 }
 
 .section-header.overdue {
@@ -323,15 +360,25 @@ input::placeholder, textarea::placeholder {
   align-items: flex-start;
   gap: 12px;
   padding: 14px 16px;
-  margin: 0 12px 6px;
+  /* Was `0 12px` — 8px inside the 20px inset that the page title, stat chips
+     and section headers all use, so every card edge sat proud of the column. */
+  margin: 0 var(--page-inset) 8px;
   border-radius: var(--radius-md);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: all var(--transition-normal);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--surface-shadow), var(--surface-sheen);
+  /* `all` also animated the priority stripe and the transform used by the
+     complete/delete keyframes; naming the properties keeps those crisp. */
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+    box-shadow var(--transition-fast), opacity var(--transition-normal);
   position: relative;
   overflow: hidden;
   animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.task-item:active {
+  background: var(--surface-1-active);
+  box-shadow: var(--surface-shadow-active), var(--surface-sheen);
 }
 
 .task-item::before {
@@ -798,6 +845,12 @@ input::placeholder, textarea::placeholder {
 }
 
 /* ─── Calendar ───────────────────────────────────────────────────────────── */
+/* 12px, not --page-inset, and that is deliberate. The grid is 7 equal columns of
+   ~50px, each centering a 34px day circle, so the circles sit ~8px inside their
+   column box. 12px of container padding puts the first circle's visible edge at
+   ~19px and the last at ~356px — i.e. optically flush with the 20px column the
+   h1 and cards use. Raising this to 20px would align the invisible grid box and
+   push the circles you actually see inward to ~27px. Align the ink, not the box. */
 .calendar-container {
   padding: 0 12px;
 }
@@ -928,18 +981,23 @@ input::placeholder, textarea::placeholder {
 /* Day task list below calendar */
 .day-tasks-container {
   margin-top: 16px;
-  padding: 0 4px;
+  /* No horizontal padding: .task-item already carries `margin: 0 var(--page-inset)`,
+     so the 4px that used to live here stacked on top of it and pushed every task
+     card in the calendar to 24px — 4px proud of the column the rest of the app
+     sits on. Children own their own inset now. */
+  padding: 0;
 }
 
 .day-tasks-header {
-  font-size: 15px;
+  font-size: var(--text-title);
   font-weight: 600;
-  padding: 8px 8px 10px;
+  /* Matches the page gutter directly now that the container contributes nothing. */
+  padding: 8px var(--page-inset) 10px;
   color: var(--tg-theme-text-color);
   display: flex;
   align-items: center;
   gap: 8px;
-  letter-spacing: -0.2px;
+  letter-spacing: var(--tracking-tight);
 }
 
 .day-tasks-header .task-count {
@@ -953,9 +1011,9 @@ input::placeholder, textarea::placeholder {
 
 .day-tasks-empty {
   text-align: center;
-  padding: 30px 20px;
+  padding: 30px var(--page-inset);
   color: var(--tg-theme-hint-color);
-  font-size: 14px;
+  font-size: var(--text-body);
 }
 
 /* ─── Stats bar ──────────────────────────────────────────────────────────── */
@@ -1464,33 +1522,86 @@ input::placeholder, textarea::placeholder {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 0 20px;
+  padding: 0 var(--page-inset);
+}
+
+/* ─── Shared card surface ─────────────────────────────────────────────────────
+   Every raised card in the app resolves through this one block. The families
+   below (.power-widget, .fmge-widget, .gym-widget, .study-card, .ai-usage-widget)
+   keep their own class names — they carry layout — but hand the surface over
+   to these properties so the four of them stay in sync. */
+.power-widget,
+.fmge-widget,
+.gym-widget,
+.ai-usage-widget,
+.study-card {
+  background: var(--surface-1);
+  border: 1px solid var(--surface-border);
+  box-shadow: var(--surface-shadow), var(--surface-sheen);
+  border-radius: var(--radius-lg);
+}
+
+/* Padding is deliberately NOT in the rule above. AiUsageWidget.css is imported
+   through the App module graph, which Vite hoists above index.css, so anything
+   this file sets on .ai-usage-widget beats that file — and the AI card wants a
+   tighter vertical rhythm than the rest. Listing the families that do want the
+   standard box keeps that override working where it lives. */
+.power-widget,
+.fmge-widget,
+.gym-widget,
+.study-card {
+  padding: var(--card-pad);
+}
+
+/* Tap response: settle *down* into the page rather than scaling, which is what
+   iOS 26 does for a whole-card tap target. transform is cheaper than shadow to
+   animate, so the scale carries the motion and the shadow just tightens. */
+.power-widget:active,
+.fmge-widget:active,
+.gym-widget:active {
+  transform: scale(0.985);
+  background: var(--surface-1-active);
+  box-shadow: var(--surface-shadow-active), var(--surface-sheen);
+}
+
+/* One focus ring for all of them, in the neutral accent — a focus ring that
+   changes colour per card is noise, not information. */
+.power-widget:focus-visible,
+.fmge-widget:focus-visible,
+.gym-widget:focus-visible {
+  border-color: rgba(10, 132, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.22), var(--surface-sheen);
+}
+
+/* ─── Shared card header ──────────────────────────────────────────────────────
+   Title left (icon + name), status right. The three home widgets each built
+   this row separately at different sizes; these rules give the role one value
+   and let the per-widget blocks below only override what's genuinely different. */
+.power-widget-title,
+.fmge-widget-title,
+.gym-widget-title {
+  font-size: var(--text-title);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  color: var(--tg-theme-text-color);
+}
+
+.power-widget-icon,
+.fmge-widget-icon,
+.gym-widget-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 /* ─── Power Widget ───────────────────────────────────────────────────────── */
+/* Surface, radius, padding, :active and :focus-visible come from the shared
+   card block above. */
 .power-widget {
-  padding: 16px;
-  border-radius: var(--radius-lg);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: transform var(--transition-spring), background var(--transition-fast),
+    border-color var(--transition-fast), box-shadow var(--transition-fast);
   cursor: pointer;
   outline: none;
-}
-
-.power-widget:hover {
-  border-color: rgba(255, 159, 10, 0.25);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 159, 10, 0.06);
-}
-
-.power-widget:active {
-  transform: scale(0.98);
-  background: var(--glass-bg-hover);
-}
-
-.power-widget:focus-visible {
-  border-color: rgba(255, 159, 10, 0.5);
-  box-shadow: 0 0 0 3px rgba(255, 159, 10, 0.2);
 }
 
 .power-widget-header {
@@ -1501,18 +1612,11 @@ input::placeholder, textarea::placeholder {
 }
 
 .power-widget-icon {
-  width: 20px;
-  height: 20px;
-  stroke: #ff9f0a;
-  flex-shrink: 0;
+  stroke: var(--accent-orange);
 }
 
 .power-widget-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--tg-theme-text-color);
   flex: 1;
-  letter-spacing: -0.2px;
 }
 
 .power-widget-chevron {
@@ -1975,47 +2079,17 @@ input::placeholder, textarea::placeholder {
 }
 
 /* ─── FMGE Progress Widget (Home, redesigned) ─────────────────────────────── */
+/* Surface comes from the shared card block. The green/blue diagonal wash and
+   the radial glow that used to live here are gone: they made this one card
+   read as a different material from its neighbours, and the green is more
+   legible when it's carried by the ring and the status text alone. */
 .fmge-widget {
   position: relative;
-  padding: 14px 16px 14px;
-  border-radius: var(--radius-lg);
-  background:
-    linear-gradient(135deg, rgba(48, 209, 88, 0.07) 0%, rgba(10, 132, 255, 0.04) 60%, rgba(255, 255, 255, 0.02) 100%);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
-  transition: transform var(--transition-spring), background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: transform var(--transition-spring), background var(--transition-fast),
+    border-color var(--transition-fast), box-shadow var(--transition-fast);
   cursor: pointer;
   overflow: hidden;
-  animation: slideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   outline: none;
-}
-
-.fmge-widget::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -30%;
-  width: 80%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(48, 209, 88, 0.08) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.fmge-widget:hover {
-  border-color: rgba(48, 209, 88, 0.25);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(48, 209, 88, 0.08);
-}
-
-.fmge-widget:active {
-  transform: scale(0.98);
-  background:
-    linear-gradient(135deg, rgba(48, 209, 88, 0.1) 0%, rgba(10, 132, 255, 0.06) 60%, rgba(255, 255, 255, 0.03) 100%);
-}
-
-.fmge-widget:focus-visible {
-  border-color: rgba(48, 209, 88, 0.5);
-  box-shadow: 0 0 0 3px rgba(48, 209, 88, 0.2);
 }
 
 /* Header */
@@ -2035,17 +2109,7 @@ input::placeholder, textarea::placeholder {
 }
 
 .fmge-widget-icon {
-  width: 18px;
-  height: 18px;
-  stroke: #30d158;
-  flex-shrink: 0;
-}
-
-.fmge-widget-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--tg-theme-text-color);
-  letter-spacing: -0.2px;
+  stroke: var(--accent-green);
 }
 
 .fmge-widget-days {
@@ -2114,11 +2178,19 @@ input::placeholder, textarea::placeholder {
 
 .fmge-widget-ring-fill {
   fill: none;
-  stroke: #30d158;
+  stroke: var(--accent-green);
   stroke-width: 3.5;
   stroke-linecap: round;
   filter: drop-shadow(0 0 6px rgba(48, 209, 88, 0.45));
   transition: stroke-dasharray 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* At 0% the dasharray is "0 97.4", and a round linecap renders a zero-length
+   dash as a visible dot — so an empty ring showed a floating green pip at
+   12 o'clock. Butt caps have no such artifact at zero length. */
+.fmge-widget-ring-fill[stroke-dasharray^="0 "],
+.gym-widget-ring-fill[stroke-dasharray^="0 "] {
+  stroke-linecap: butt;
 }
 
 .fmge-widget-ring-pct {
@@ -2833,14 +2905,17 @@ input::placeholder, textarea::placeholder {
 }
 
 /* Cards Base */
+/* Surface, border, radius, shadow and padding come from the shared card block
+   near the top of this file. This rule used to re-declare all five with its own
+   values (a flat rgba(18,18,20,0.7) fill, radius 20, a deeper shadow) — which
+   is why study/gym cards read as a different material from the home widgets
+   sitting one tab away. Only the stack spacing is specific to this family.
+
+   The backdrop-filter went with it: over an opaque #000 page there is nothing
+   behind these cards to blur, so it cost a compositing layer per card and
+   bought nothing. */
 .study-card {
-  background: rgba(18, 18, 20, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 16px;
   margin-bottom: 16px;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 .card-header-row, .card-title-row {
@@ -4647,25 +4722,12 @@ input::placeholder, textarea::placeholder {
 }
 
 /* ─── Home widget ────────────────────────────────────────────────────────── */
+/* Surface, padding, :active and :focus-visible come from the shared card block. */
 .gym-widget {
-  padding: 16px;
-  border-radius: var(--radius-lg);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
   cursor: pointer;
   outline: none;
   transition: transform var(--transition-spring), background var(--transition-fast),
     border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.gym-widget:active {
-  transform: scale(0.98);
-  background: var(--glass-bg-hover);
-}
-
-.gym-widget:focus-visible {
-  border-color: rgba(255, 159, 10, 0.5);
-  box-shadow: 0 0 0 3px rgba(255, 159, 10, 0.18);
 }
 
 .gym-widget-head {
@@ -4678,20 +4740,16 @@ input::placeholder, textarea::placeholder {
 .gym-widget-head-left {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
 }
 
 .gym-widget-icon {
-  width: 17px;
-  height: 17px;
   color: var(--gym-accent);
 }
 
 .gym-widget-title {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.2px;
-  color: #f5f5f7;
+  /* was 13px/700 +0.2px — the shared card-header rule now supplies
+     15px/600/-0.24px, matching the FMGE and Power cards beside it. */
 }
 
 .gym-widget-status-tag {
@@ -4869,3 +4927,36 @@ input::placeholder, textarea::placeholder {
   }
 }
 
+
+/* ─── Reduced motion ─────────────────────────────────────────────────────────
+   The app leans on motion heavily: spring-scaled card taps, slideIn on mount,
+   pulsing status dots, the tabbar's sliding pill, ring/bar fill transitions.
+   For anyone who has asked the OS to cut animation, collapse all of it to a
+   near-instant state change rather than removing transitions outright —
+   `transition: none` would make JS that waits on transitionend hang, and 0.01ms
+   still fires the event.
+
+   Deliberately NOT scoped to this app's own classes: Framework7 ships its own
+   animations (the tabbar highlight, sheet transitions) and those need the same
+   treatment. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* The tap-scale on cards is the one effect worth neutralising rather than
+     just shortening — an instant snap to 0.985 reads as a glitch. */
+  .power-widget:active,
+  .fmge-widget:active,
+  .gym-widget:active,
+  .timer-play-btn:active,
+  .timer-reset-btn:active,
+  .timer-finish-btn:active {
+    transform: none;
+  }
+}
