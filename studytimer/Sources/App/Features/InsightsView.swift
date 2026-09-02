@@ -143,7 +143,7 @@ struct InsightsView: View {
     /// track should mean "hit the target", not "did more than Tuesday".
     private func barHeight(_ seconds: TimeInterval) -> CGFloat {
         let fraction = min(1, seconds / HistoryStore.dailyStudyGoal)
-        return max(3, 96 * fraction)
+        return max(3, CGFloat(96 * fraction))
     }
 
     // MARK: Screen time (foreign process)

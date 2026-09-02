@@ -27,7 +27,7 @@ struct HoldToEndButton: View {
                 GeometryReader { geo in
                     Capsule()
                         .fill(Theme.red.opacity(0.28))
-                        .frame(width: geo.size.width * fill)
+                        .frame(width: geo.size.width * CGFloat(fill))
                 }
             }
 

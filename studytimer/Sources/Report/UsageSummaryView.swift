@@ -53,7 +53,7 @@ struct UsageSummaryView: View {
                             Capsule().fill(Theme.surface)
                             Capsule()
                                 .fill(Theme.blue.opacity(0.85))
-                                .frame(width: geo.size.width * fraction(row.duration))
+                                .frame(width: geo.size.width * CGFloat(fraction(row.duration)))
                         }
                     }
                     .frame(height: 6)

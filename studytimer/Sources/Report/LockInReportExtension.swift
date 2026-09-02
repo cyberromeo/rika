@@ -26,7 +26,6 @@ struct UsageSummary {
     }
 
     var totalDuration: TimeInterval = 0
-    var pickups: Int = 0
     var categories: [Row] = []
     var apps: [Row] = []
 }
@@ -44,7 +43,6 @@ struct DailyTotalScene: DeviceActivityReportScene {
 
         for await segment in data {
             summary.totalDuration += segment.totalActivityDuration
-            summary.pickups += segment.totalPickupsWithoutApplicationActivity
 
             for await category in segment.categories {
                 let name = category.category.localizedDisplayName ?? "Other"

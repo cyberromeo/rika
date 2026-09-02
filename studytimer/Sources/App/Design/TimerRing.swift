@@ -63,7 +63,10 @@ struct TimerRing: View {
                 .fill(.white)
                 .frame(width: lineWidth * 0.42, height: lineWidth * 0.42)
                 .shadow(color: tint.opacity(0.8), radius: 5)
-                .offset(x: radius * cos(angle.radians), y: radius * sin(angle.radians))
+                .offset(
+                    x: radius * CGFloat(cos(angle.radians)),
+                    y: radius * CGFloat(sin(angle.radians))
+                )
                 .position(x: geo.size.width / 2, y: geo.size.height / 2)
                 .opacity(progress > 0.004 ? 1 : 0)
         }
