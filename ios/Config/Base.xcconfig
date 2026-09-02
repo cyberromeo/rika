@@ -1,0 +1,36 @@
+// Base.xcconfig — build settings shared by every target and configuration.
+//
+// Secrets live in Config/Secrets.xcconfig, which is gitignored. Copy
+// Secrets.example.xcconfig to Secrets.xcconfig and fill in the four values;
+// CI writes the same file from repository secrets before generating the
+// project. The #include? form (with the question mark) does not fail the build
+// when the file is absent, so a fresh clone still compiles — the app just shows
+// its empty states until the tokens are supplied.
+#include? "Secrets.xcconfig"
+
+// ── Endpoints ───────────────────────────────────────────────────────────────
+// Hosts are not secret, so they live here rather than in Secrets.xcconfig.
+// Slashes are escaped as ${SLASH} because xcconfig treats // as a comment.
+SLASH = /
+TODOIST_BASE_URL   = https:$(SLASH)$(SLASH)api.todoist.com/api/v1
+MIRAIE_BASE_URL    = https:$(SLASH)$(SLASH)app.miraie.in/simplifi/v1
+MOTRA_BASE_URL     = https:$(SLASH)$(SLASH)api.srihari.quest/api/motra
+MEDX_BASE_URL      = https:$(SLASH)$(SLASH)medx.srihari.quest/api
+
+// Origin of the Vercel deployment that hosts /api/ai-usage. Leave empty to
+// disable the AI usage card (it renders its "—" empty state).
+AI_USAGE_BASE_URL  =
+
+// ── App group ───────────────────────────────────────────────────────────────
+// Shared container for the app <-> widget cache. Requires the App Groups
+// capability on the signing profile; AppGroupCache degrades to a per-target
+// Application Support directory when the container is unavailable.
+APP_GROUP_ID = group.quest.srihari.rika
+
+// ── Toolchain ───────────────────────────────────────────────────────────────
+SWIFT_VERSION = 5.0
+IPHONEOS_DEPLOYMENT_TARGET = 26.0
+TARGETED_DEVICE_FAMILY = 1
+SWIFT_TREAT_WARNINGS_AS_ERRORS = NO
+GCC_TREAT_WARNINGS_AS_ERRORS = NO
+ENABLE_BITCODE = NO
