@@ -1,0 +1,126 @@
+name: iOS
+
+on:
+  push:
+    paths:
+      - 'studytimer/**'
+      - '.github/workflows/ios.yml'
+  pull_request:
+    paths:
+      - 'studytimer/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: studytimer
+
+jobs:
+  build:
+    name: Build (iOS 26 SDK)
+    # Pinned deliberately. `macos-latest` still resolves to Xcode 16.4
+    # (actions/runner-images#14165), which has no iOS 26 SDK — so no .glassEffect(),
+    # no Tab syntax, no build.
+    runs-on: macos-26
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: |
+          set -euo pipefail
+          # Highest installed Xcode 26.x rather than a hardcoded point release: the
+          # runner image's default moves every couple of months.
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$XCODE" ]; then
+            echo "::error::No Xcode 26.x on this runner. Installed:"
+            ls -d /Applications/Xcode*.app
+            exit 1
+          fi
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+          echo "SDKs:"
+          xcodebuild -showsdks | grep -i ios || true
+
+      - name: Install XcodeGen
+        run: brew install xcodegen xcbeautify
+
+      - name: Generate project
+        run: xcodegen generate --spec project.yml
+
+      - name: Build all six targets
+        # `generic/platform=iOS` needs no simulator runtime — those are frequently
+        # missing on this image (actions/runner-images#13435) and a device-arch build
+        # is a stricter compile check anyway. Signing off means the Family Controls
+        # entitlement isn't validated, so no provisioning profile is required.
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project StudyTimer.xcodeproj \
+            -scheme StudyTimer \
+            -configuration Debug \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcbeautify --renderer github-actions || {
+              echo "::error::Build failed"; exit 1;
+            }
+
+  test:
+    name: Unit tests
+    runs-on: macos-26
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: |
+          set -euo pipefail
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$XCODE" ] || { echo "::error::No Xcode 26.x"; exit 1; }
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen xcbeautify
+
+      - name: Generate project
+        run: xcodegen generate --spec project.yml
+
+      - name: Run tests
+        # Tests need a real simulator, and iOS 26 runtimes come and go on this image.
+        # Discover one rather than hardcoding a device name; report clearly instead of
+        # failing opaquely if the image has none.
+        run: |
+          set -euo pipefail
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          data = json.load(sys.stdin)["devices"]
+          found = ""
+          for runtime, devices in data.items():
+              if "iOS" not in runtime:
+                  continue
+              for device in devices:
+                  if device.get("isAvailable") and "iPhone" in device.get("name", ""):
+                      found = device["name"]
+          print(found)
+          ')
+          if [ -z "$DEVICE" ]; then
+            echo "::warning::No iPhone simulator on this runner; skipping tests."
+            xcrun simctl list runtimes
+            exit 0
+          fi
+          echo "Testing on: $DEVICE"
+          set -o pipefail
+          xcodebuild test \
+            -project StudyTimer.xcodeproj \
+            -scheme StudyTimer \
+            -destination "platform=iOS Simulator,name=$DEVICE" \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify --renderer github-actions

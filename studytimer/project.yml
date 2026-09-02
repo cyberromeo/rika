@@ -1,0 +1,164 @@
+# XcodeGen spec — regenerate with:  cd studytimer && xcodegen generate
+#
+# Six targets: the app, a Live Activity widget, and four Screen Time extensions.
+# Extensions 3-6 exist because FamilyControls/ManagedSettings/DeviceActivity only
+# expose those behaviours through app extensions, not through the app process.
+
+name: StudyTimer
+
+options:
+  bundleIdPrefix: quest.srihari.studytimer
+  createIntermediateGroups: true
+  groupSortPosition: top
+  deploymentTarget:
+    iOS: "26.0"
+
+configs:
+  Debug: debug
+  Release: release
+
+# Base.xcconfig #include?s the gitignored Secrets.xcconfig, so a fresh clone and
+# CI both build with no copy step. Project-level so every target inherits the
+# app group id and toolchain settings.
+configFiles:
+  Debug: Config/Base.xcconfig
+  Release: Config/Base.xcconfig
+
+# Swift 5 language mode is deliberate: this project is only ever compiled in CI,
+# so Swift 6 strict-concurrency diagnostics would cost a push-and-wait cycle each.
+# Revisit once there's a Mac in the loop.
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+    GENERATE_INFOPLIST_FILE: NO
+    CLANG_ENABLE_MODULES: YES
+
+# One entitlements file for all six targets — every one needs exactly the same
+# pair (family-controls + the shared app group), so duplicating it only creates
+# an opportunity for them to drift apart.
+targetTemplates:
+  ScreenTimeExtension:
+    type: app-extension
+    platform: iOS
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: Support/StudyTimer.entitlements
+        SKIP_INSTALL: YES
+
+targets:
+  StudyTimer:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources/App
+      - path: Sources/Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: quest.srihari.studytimer
+        INFOPLIST_FILE: Support/App-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Support/StudyTimer.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SWIFT_OBJC_BRIDGING_HEADER: ""
+    dependencies:
+      - target: StudyTimerWidgets
+      - target: StudyTimerMonitor
+      - target: StudyTimerShieldConfig
+      - target: StudyTimerShieldAction
+      - target: StudyTimerReport
+
+  StudyTimerWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Sources/Widgets
+      - path: Sources/Shared/Core
+      - path: Sources/Shared/ScreenTime
+      # LiveActivityIntent is referenced here and executed in the app, so both
+      # targets compile it.
+      - path: Sources/Shared/Intents
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: quest.srihari.studytimer.widgets
+        INFOPLIST_FILE: Support/Widgets-Info.plist
+        CODE_SIGN_ENTITLEMENTS: Support/StudyTimer.entitlements
+        SKIP_INSTALL: YES
+
+  StudyTimerMonitor:
+    templates: [ScreenTimeExtension]
+    sources:
+      - path: Sources/Monitor
+      - path: Sources/Shared/Core
+      - path: Sources/Shared/ScreenTime
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: quest.srihari.studytimer.monitor
+        INFOPLIST_FILE: Support/Monitor-Info.plist
+
+  StudyTimerShieldConfig:
+    templates: [ScreenTimeExtension]
+    sources:
+      - path: Sources/ShieldConfig
+      - path: Sources/Shared/Core
+      - path: Sources/Shared/ScreenTime
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: quest.srihari.studytimer.shieldconfig
+        INFOPLIST_FILE: Support/ShieldConfig-Info.plist
+
+  StudyTimerShieldAction:
+    templates: [ScreenTimeExtension]
+    sources:
+      - path: Sources/ShieldAction
+      - path: Sources/Shared/Core
+      - path: Sources/Shared/ScreenTime
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: quest.srihari.studytimer.shieldaction
+        INFOPLIST_FILE: Support/ShieldAction-Info.plist
+
+  StudyTimerReport:
+    templates: [ScreenTimeExtension]
+    sources:
+      - path: Sources/Report
+      - path: Sources/Shared/Core
+      - path: Sources/Shared/ScreenTime
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: quest.srihari.studytimer.report
+        INFOPLIST_FILE: Support/Report-Info.plist
+
+  StudyTimerTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+      # Core only — the ScreenTime/ files import FamilyControls, which cannot be
+      # exercised in a test bundle. Everything worth unit-testing is pure anyway.
+      - path: Sources/Shared/Core
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: quest.srihari.studytimer.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  StudyTimer:
+    build:
+      targets:
+        StudyTimer: all
+        StudyTimerTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - StudyTimerTests
+    archive:
+      config: Release

@@ -24,3 +24,14 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# iOS (studytimer/)
+# The .xcodeproj is generated from project.yml by XcodeGen — never commit it, or
+# it becomes a second source of truth that silently diverges.
+studytimer/*.xcodeproj
+studytimer/*.xcworkspace
+studytimer/Config/Secrets.xcconfig
+studytimer/build/
+studytimer/DerivedData/
+xcuserdata/
+*.xcuserstate

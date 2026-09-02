@@ -1,0 +1,28 @@
+// Base.xcconfig — build settings shared by every target and configuration.
+//
+// Matches the convention already used by the sibling ios/ project: secrets live
+// in Config/Secrets.xcconfig, which is gitignored, and are pulled in with the
+// `#include?` form. The question mark means a missing file is *not* a build
+// error — so a fresh clone and CI both compile with no copy step, and the app
+// simply reports "medx sync: not configured".
+#include? "Secrets.xcconfig"
+
+// ── Endpoints ───────────────────────────────────────────────────────────────
+// Not secret, so they live here. xcconfig treats // as a comment, hence SLASH.
+SLASH = /
+MEDX_BASE_URL = https:$(SLASH)$(SLASH)medx.srihari.quest
+
+// ── App group ───────────────────────────────────────────────────────────────
+// Shared container between the app and its five extensions. Must match
+// Support/StudyTimer.entitlements and AppGroup.identifier.
+APP_GROUP_ID = group.quest.srihari.studytimer
+
+// ── Toolchain ───────────────────────────────────────────────────────────────
+// Swift 5 language mode is deliberate: CI is the only compiler for this project,
+// so Swift 6 strict-concurrency diagnostics would cost a push-and-wait cycle
+// each. Revisit once there's a Mac in the loop.
+SWIFT_VERSION = 5.0
+IPHONEOS_DEPLOYMENT_TARGET = 26.0
+TARGETED_DEVICE_FAMILY = 1
+SWIFT_TREAT_WARNINGS_AS_ERRORS = NO
+GCC_TREAT_WARNINGS_AS_ERRORS = NO
