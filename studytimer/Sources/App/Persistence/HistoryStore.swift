@@ -14,8 +14,12 @@ final class HistoryStore {
     private let context: ModelContext
 
     /// Daily targets, matching the backend defaults (11h study, 2h PYQ).
-    static let dailyStudyGoal: TimeInterval = 11 * 3600
-    static let dailyPyqGoal: TimeInterval = 2 * 3600
+    ///
+    /// `nonisolated` because these are used as default arguments — which Swift
+    /// evaluates outside the actor — and referencing a main-actor-isolated static
+    /// from there is an error in Swift 6 language mode.
+    nonisolated static let dailyStudyGoal: TimeInterval = 11 * 3600
+    nonisolated static let dailyPyqGoal: TimeInterval = 2 * 3600
 
     init(context: ModelContext) {
         self.context = context

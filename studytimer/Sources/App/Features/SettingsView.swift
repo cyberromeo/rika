@@ -145,11 +145,14 @@ struct SettingsView: View {
     }
 
     private var statusText: String {
+        // Plain `default` rather than `@unknown default`: AuthorizationStatus gained
+        // a case this SDK knows about that the three below don't cover, and there's
+        // nothing useful to say about it beyond "not approved".
         switch auth.status {
         case .approved: "Authorized"
         case .denied: "Denied"
         case .notDetermined: "Not set up"
-        @unknown default: "Unknown"
+        default: "Unavailable"
         }
     }
 }

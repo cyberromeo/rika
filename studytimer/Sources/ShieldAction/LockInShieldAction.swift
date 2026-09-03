@@ -47,10 +47,11 @@ final class LockInShieldAction: ShieldActionDelegate {
         case .primaryButtonPressed:
             // Dismiss the blocked app and go back to the home screen.
             return .close
-        case .secondaryButtonPressed:
+        // Plain `default` rather than `@unknown default`: ShieldAction carries a case
+        // beyond the two buttons, and anything that isn't the primary button should
+        // leave the shield exactly where it is.
+        default:
             return .defer
-        @unknown default:
-            return .none
         }
     }
 }
