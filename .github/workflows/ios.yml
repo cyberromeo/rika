@@ -68,8 +68,16 @@ jobs:
             -destination 'generic/platform=iOS' \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            | xcbeautify --renderer github-actions || {
-              echo "::error::Build failed"; exit 1;
+            2>&1 | tee "$RUNNER_TEMP/raw.log" | xcbeautify --renderer github-actions || {
+              # xcbeautify drops `note:` lines, which are the half of a protocol
+              # conformance error that says *which* requirement is unsatisfied.
+              # Developing without a local compiler makes that the difference
+              # between one push and four.
+              echo "::group::Raw xcodebuild diagnostics"
+              grep -E "error:|note:" "$RUNNER_TEMP/raw.log" | head -80 || true
+              echo "::endgroup::"
+              echo "::error::Build failed"
+              exit 1
             }
 
   unsigned-ipa:

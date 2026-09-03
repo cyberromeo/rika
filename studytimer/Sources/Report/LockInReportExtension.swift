@@ -17,9 +17,12 @@ struct LockInReportExtension: DeviceActivityReportExtension {
     }
 }
 
-/// Flattened, sendable snapshot of one reporting window.
-struct UsageSummary {
-    struct Row: Identifiable {
+/// Flattened snapshot of one reporting window.
+///
+/// `Sendable` is required, not decorative: `makeConfiguration` is `async`, so the
+/// configuration crosses an isolation boundary on its way to the view.
+struct UsageSummary: Sendable {
+    struct Row: Identifiable, Sendable {
         let id: String
         let name: String
         let duration: TimeInterval
@@ -31,6 +34,13 @@ struct UsageSummary {
 }
 
 struct DailyTotalScene: DeviceActivityReportScene {
+    // Spelled out rather than left to inference. When a `DeviceActivityReportScene`
+    // fails to conform, the compiler reports the conformance failure and not the
+    // underlying mismatch, so pinning both associated types turns a dead-end error
+    // into a specific one.
+    typealias Configuration = UsageSummary
+    typealias Content = UsageSummaryView
+
     let context: DeviceActivityReport.Context = .dailyTotal
     let content: (UsageSummary) -> UsageSummaryView
 
