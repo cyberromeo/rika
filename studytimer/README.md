@@ -131,6 +131,40 @@ Each step depends on the one before it, so work down the list:
 
 Steps 1–5 cannot be verified by CI or from a Windows machine at all.
 
+## Getting it on the phone
+
+There is no way to produce an installable build from Windows. The
+[`iOS Device Build`](../.github/workflows/ios-device.yml) workflow does it on a
+runner instead — manual trigger, uploads a signed `.ipa` as an artifact.
+
+It signs with an **App Store Connect API key** and automatic provisioning rather
+than imported certificates. That's not a stylistic preference: six targets would
+otherwise mean six provisioning profiles created, base64-ed and kept in sync by
+hand. With an API key `xcodebuild` creates and downloads all six itself.
+
+**One-time setup.** All of it is doable from a browser on Windows.
+
+1. [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → Users and
+   Access → Integrations → App Store Connect API → **+**. Role **App Manager**.
+   Download the `.p8` — you get exactly one chance. Note the Key ID and Issuer ID.
+2. [developer.apple.com](https://developer.apple.com/account) → Devices → **+**.
+   Add your iPhone's UDID. Automatic provisioning can create profiles but cannot
+   register a device for you, so a build signed before this step won't install.
+3. Identifiers → for each of the six bundle IDs (`quest.srihari.studytimer` and its
+   `.widgets`, `.monitor`, `.shieldconfig`, `.shieldaction`, `.report` suffixes) →
+   enable **Family Controls**. Xcode can create the App IDs but won't enable an
+   entitlement that needs approval. The workflow warns if the signed binary comes
+   out without it.
+4. Add four repository secrets: `ASC_KEY_ID`, `ASC_ISSUER_ID`, `APPLE_TEAM_ID`, and
+   `ASC_KEY_P8` (the `.p8` base64-encoded — `certutil -encode AuthKey_XXX.p8 out.txt`
+   on Windows, then strip the header/footer lines).
+
+**Installing the artifact.** The `.ipa` is signed for development, so it installs
+directly — no TestFlight. On Windows use [Sideloadly](https://sideloadly.io) or
+iMazing; on a Mac, Apple Configurator. TestFlight is a different route entirely and
+is blocked until Apple approves the Family Controls (Distribution) entitlement, so
+don't plan around it.
+
 ## Relationship to `ios/`
 
 There's a separate, larger native port of the whole Rika dashboard in
