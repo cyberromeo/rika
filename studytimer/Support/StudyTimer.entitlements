@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Gateway entitlement for the whole Screen Time API: FamilyControls,
+	     ManagedSettings and DeviceActivity all refuse to work without it.
+	     Development is auto-provisioned for paid Developer Program members;
+	     TestFlight/App Store additionally need Family Controls (Distribution),
+	     which is a separate request to Apple. -->
+	<key>com.apple.developer.family-controls</key>
+	<true/>
+
+	<!-- The only channel between the app and its five extensions. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.quest.srihari.studytimer</string>
+	</array>
+</dict>
+</plist>

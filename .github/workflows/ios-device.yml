@@ -1,0 +1,173 @@
+name: iOS Device Build
+
+# Produces a signed, installable .ipa as a workflow artifact.
+#
+# Manual trigger only — it consumes signing credentials and there's no reason to
+# run it on every push. The plain `ios.yml` workflow is the compile check.
+#
+# Signing uses an App Store Connect API key with automatic provisioning rather
+# than imported .p12 + .mobileprovision files. That choice matters here: this app
+# has six targets, so manual signing would mean creating and base64-ing six
+# separate provisioning profiles and keeping them in sync by hand. With an API key,
+# xcodebuild creates and downloads all six itself.
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions):
+#
+#   ASC_KEY_ID        Key ID of an App Store Connect API key
+#   ASC_ISSUER_ID     Issuer ID from the same page
+#   ASC_KEY_P8        The .p8 private key file, base64 encoded
+#   APPLE_TEAM_ID     Your 10-character Team ID
+#
+# See studytimer/README.md, "Getting it on the phone", for how to create these and
+# the one manual step this can't automate (enabling Family Controls per App ID).
+
+on:
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: Build configuration
+        type: choice
+        options: [Debug, Release]
+        default: Debug
+
+defaults:
+  run:
+    working-directory: studytimer
+
+jobs:
+  ipa:
+    name: Signed .ipa
+    runs-on: macos-26
+    timeout-minutes: 40
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fail early if signing secrets are missing
+        # Without this the failure surfaces 15 minutes later as an opaque
+        # xcodebuild signing error.
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          missing=""
+          [ -n "$ASC_KEY_ID" ]     || missing="$missing ASC_KEY_ID"
+          [ -n "$ASC_ISSUER_ID" ]  || missing="$missing ASC_ISSUER_ID"
+          [ -n "$ASC_KEY_P8" ]     || missing="$missing ASC_KEY_P8"
+          [ -n "$APPLE_TEAM_ID" ]  || missing="$missing APPLE_TEAM_ID"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secrets:$missing — see studytimer/README.md"
+            exit 1
+          fi
+
+      - name: Select Xcode 26
+        run: |
+          set -euo pipefail
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$XCODE" ] || { echo "::error::No Xcode 26.x on this runner"; exit 1; }
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen xcbeautify
+
+      - name: Write App Store Connect API key
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          # xcodebuild looks for the key by filename convention.
+          mkdir -p "$RUNNER_TEMP/private_keys"
+          echo "$ASC_KEY_P8" | base64 --decode > "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          chmod 600 "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+
+      - name: Generate project
+        run: xcodegen generate --spec project.yml
+
+      - name: Archive
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          set -o pipefail
+          xcodebuild archive \
+            -project StudyTimer.xcodeproj \
+            -scheme StudyTimer \
+            -configuration "${{ inputs.configuration }}" \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/StudyTimer.xcarchive" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            | xcbeautify --renderer github-actions
+
+      - name: Export .ipa
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          # `debugging` is Xcode 15.3+'s name for what used to be `development`:
+          # a build signed for devices registered to the team, installable
+          # directly rather than through TestFlight. TestFlight would need
+          # `app-store-connect`, which is gated on the Family Controls
+          # (Distribution) entitlement being approved by Apple.
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>debugging</string>
+            <key>teamID</key><string>${APPLE_TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>stripSwiftSymbols</key><true/>
+            <key>compileBitcode</key><false/>
+            <key>thinning</key><string>&lt;none&gt;</string>
+          </dict>
+          </plist>
+          PLIST
+
+          set -o pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/StudyTimer.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$RUNNER_TEMP/private_keys/AuthKey_${ASC_KEY_ID}.p8" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            | xcbeautify --renderer github-actions
+
+      - name: Confirm entitlements survived signing
+        # The single most useful check in this workflow. If family-controls is
+        # missing from the signed binary, the app installs and runs but every
+        # Screen Time call fails at runtime — which is a confusing bug to chase
+        # on device.
+        run: |
+          set -euo pipefail
+          APP=$(find "$RUNNER_TEMP/StudyTimer.xcarchive/Products/Applications" -name '*.app' -maxdepth 1 | head -1)
+          echo "Entitlements on $(basename "$APP"):"
+          codesign -d --entitlements :- "$APP" 2>/dev/null || true
+          if codesign -d --entitlements :- "$APP" 2>/dev/null | grep -q 'family-controls'; then
+            echo "family-controls present"
+          else
+            echo "::warning::com.apple.developer.family-controls is NOT in the signed entitlements. Enable the Family Controls capability on each App ID in the developer portal, then re-run."
+          fi
+
+      - name: Upload .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: LockIn-ipa-${{ inputs.configuration }}
+          path: ${{ runner.temp }}/export/*.ipa
+          if-no-files-found: error
+          retention-days: 14
