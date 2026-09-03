@@ -72,6 +72,83 @@ jobs:
               echo "::error::Build failed"; exit 1;
             }
 
+  unsigned-ipa:
+    name: Unsigned .ipa (sign with SideStore)
+    needs: build
+    runs-on: macos-26
+    timeout-minutes: 35
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: |
+          set -euo pipefail
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$XCODE" ] || { echo "::error::No Xcode 26.x"; exit 1; }
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+
+      - name: Install XcodeGen
+        run: brew install xcodegen xcbeautify
+
+      - name: Generate project
+        run: xcodegen generate --spec project.yml
+
+      - name: Build unsigned device binary
+        # `xcodebuild archive` insists on signing, so this builds against the
+        # iphoneos SDK with signing fully disabled and the .app is packaged by hand
+        # below. That's exactly what a re-signing installer wants: no existing
+        # signature to strip.
+        run: |
+          set -euo pipefail
+          set -o pipefail
+          xcodebuild build \
+            -project StudyTimer.xcodeproj \
+            -scheme StudyTimer \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$RUNNER_TEMP/dd" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            | xcbeautify --renderer github-actions
+
+      - name: Verify all five extensions were embedded
+        # The failure this catches: an .app that installs and launches but has no
+        # Live Activity and no shield, because the extensions never made it into
+        # PlugIns/. Silent, and confusing to diagnose on device.
+        run: |
+          set -euo pipefail
+          APP="$RUNNER_TEMP/dd/Build/Products/Release-iphoneos/StudyTimer.app"
+          [ -d "$APP" ] || { echo "::error::No StudyTimer.app at $APP"; ls -R "$RUNNER_TEMP/dd/Build/Products" || true; exit 1; }
+          echo "Embedded extensions:"
+          ls -1 "$APP/PlugIns" 2>/dev/null || echo "  (none)"
+          COUNT=$(ls -1d "$APP/PlugIns"/*.appex 2>/dev/null | wc -l | tr -d ' ')
+          echo "Found $COUNT of 5 expected."
+          if [ "$COUNT" -ne 5 ]; then
+            echo "::warning::Expected 5 .appex bundles (widgets, monitor, shieldconfig, shieldaction, report), found $COUNT."
+          fi
+
+      - name: Package .ipa
+        run: |
+          set -euo pipefail
+          WORK="$RUNNER_TEMP/pkg"
+          mkdir -p "$WORK/Payload"
+          cp -R "$RUNNER_TEMP/dd/Build/Products/Release-iphoneos/StudyTimer.app" "$WORK/Payload/"
+          # An .ipa is just a zip with the .app under Payload/.
+          (cd "$WORK" && zip -qry "$RUNNER_TEMP/LockIn-unsigned.ipa" Payload)
+          ls -lh "$RUNNER_TEMP/LockIn-unsigned.ipa"
+
+      - name: Upload .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: LockIn-unsigned-ipa
+          path: ${{ runner.temp }}/LockIn-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30
+
   test:
     name: Unit tests
     runs-on: macos-26

@@ -133,37 +133,57 @@ Steps 1–5 cannot be verified by CI or from a Windows machine at all.
 
 ## Getting it on the phone
 
-There is no way to produce an installable build from Windows. The
-[`iOS Device Build`](../.github/workflows/ios-device.yml) workflow does it on a
-runner instead — manual trigger, uploads a signed `.ipa` as an artifact.
+There is no way to produce an installable build from Windows, so CI does it.
 
-It signs with an **App Store Connect API key** and automatic provisioning rather
-than imported certificates. That's not a stylistic preference: six targets would
-otherwise mean six provisioning profiles created, base64-ed and kept in sync by
-hand. With an API key `xcodebuild` creates and downloads all six itself.
+### Unsigned .ipa (SideStore / AltStore)
 
-**One-time setup.** All of it is doable from a browser on Windows.
+Every push to `ios.yml` produces one: **Actions → iOS → `LockIn-unsigned-ipa`**.
+`xcodebuild archive` insists on signing, so the job builds against the `iphoneos`
+SDK with signing off and zips the `.app` under `Payload/` by hand. No signature to
+strip, which is what a re-signing installer wants.
+
+**What works and what doesn't when SideStore signs it with a free Apple ID:**
+
+| | |
+|---|---|
+| Timer, history, notifications | ✅ Works |
+| Live Activity | ✅ Works — `NSSupportsLiveActivities` is an Info.plist key, not an entitlement |
+| **App blocking / shield / usage report** | ❌ **Won't work.** `com.apple.developer.family-controls` has to be enabled on the App ID in the developer portal, which a free account can't do. The app installs and runs; every Screen Time call fails. |
+
+Two more free-account facts worth knowing before you try: a free certificate expires
+after **7 days**, and this app carries **six** bundle identifiers (app + five
+extensions) against Apple's limit of 10 App IDs per 7 days — so one install
+consumes six of your ten weekly slots.
+
+With a **paid** account in SideStore the whole thing works, provided you enable
+Family Controls on all six App IDs first (step 3 below).
+
+### Signed .ipa
+
+[`iOS Device Build`](../.github/workflows/ios-device.yml) — manual dispatch, signs on
+the runner with an App Store Connect API key and automatic provisioning. Chosen over
+imported `.p12` + profiles because six targets would otherwise mean six provisioning
+profiles maintained by hand; `xcodebuild` creates all six from one key.
+
+**One-time setup**, all doable from a browser on Windows:
 
 1. [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → Users and
    Access → Integrations → App Store Connect API → **+**. Role **App Manager**.
    Download the `.p8` — you get exactly one chance. Note the Key ID and Issuer ID.
 2. [developer.apple.com](https://developer.apple.com/account) → Devices → **+**.
    Add your iPhone's UDID. Automatic provisioning can create profiles but cannot
-   register a device for you, so a build signed before this step won't install.
+   register a device, so a build signed before this step won't install.
 3. Identifiers → for each of the six bundle IDs (`quest.srihari.studytimer` and its
    `.widgets`, `.monitor`, `.shieldconfig`, `.shieldaction`, `.report` suffixes) →
-   enable **Family Controls**. Xcode can create the App IDs but won't enable an
-   entitlement that needs approval. The workflow warns if the signed binary comes
-   out without it.
+   enable **Family Controls**. Xcode creates App IDs but won't enable a gated
+   entitlement. The workflow runs `codesign -d --entitlements` after archiving and
+   warns if it came out missing.
 4. Add four repository secrets: `ASC_KEY_ID`, `ASC_ISSUER_ID`, `APPLE_TEAM_ID`, and
    `ASC_KEY_P8` (the `.p8` base64-encoded — `certutil -encode AuthKey_XXX.p8 out.txt`
    on Windows, then strip the header/footer lines).
 
-**Installing the artifact.** The `.ipa` is signed for development, so it installs
-directly — no TestFlight. On Windows use [Sideloadly](https://sideloadly.io) or
-iMazing; on a Mac, Apple Configurator. TestFlight is a different route entirely and
-is blocked until Apple approves the Family Controls (Distribution) entitlement, so
-don't plan around it.
+TestFlight is a third route and is blocked until Apple approves the Family Controls
+(Distribution) entitlement, so don't plan around it.
 
 ## Relationship to `ios/`
 
