@@ -44,25 +44,32 @@ struct DailyTotalScene: DeviceActivityReportScene {
     let context: DeviceActivityReport.Context = .dailyTotal
     let content: (UsageSummary) -> UsageSummaryView
 
+    /// Note the parameter type: `DeviceActivityResults<DeviceActivityData>`, not
+    /// `<DeviceActivityData.ActivitySegment>`. The results sequence yields one
+    /// `DeviceActivityData` per user/device pairing, and the segments hang off each
+    /// of those — hence the nested `for await`. Getting this wrong produces only
+    /// "does not conform to DeviceActivityReportScene", with no hint as to why.
     func makeConfiguration(
-        representing data: DeviceActivityResults<DeviceActivityData.ActivitySegment>
+        representing data: DeviceActivityResults<DeviceActivityData>
     ) async -> UsageSummary {
         var summary = UsageSummary()
         var categoryTotals: [String: TimeInterval] = [:]
         var appTotals: [String: TimeInterval] = [:]
 
-        for await segment in data {
-            summary.totalDuration += segment.totalActivityDuration
+        for await entry in data {
+            for await segment in entry.activitySegments {
+                summary.totalDuration += segment.totalActivityDuration
 
-            for await category in segment.categories {
-                let name = category.category.localizedDisplayName ?? "Other"
-                categoryTotals[name, default: 0] += category.totalActivityDuration
+                for await category in segment.categories {
+                    let name = category.category.localizedDisplayName ?? "Other"
+                    categoryTotals[name, default: 0] += category.totalActivityDuration
 
-                for await app in category.applications {
-                    let appName = app.application.localizedDisplayName
-                        ?? app.application.bundleIdentifier
-                        ?? "Unknown"
-                    appTotals[appName, default: 0] += app.totalActivityDuration
+                    for await app in category.applications {
+                        let appName = app.application.localizedDisplayName
+                            ?? app.application.bundleIdentifier
+                            ?? "Unknown"
+                        appTotals[appName, default: 0] += app.totalActivityDuration
+                    }
                 }
             }
         }

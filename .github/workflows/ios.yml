@@ -181,12 +181,12 @@ jobs:
       - name: Run tests
         # Tests need a simulator whose runtime is at least the deployment target
         # (iOS 26), and those runtimes come and go on this image
-        # (actions/runner-images#13435, #14000). Discover one rather than
-        # hardcoding a device name, and skip with a clear message instead of
-        # failing opaquely when the image has nothing suitable.
+        # (actions/runner-images#13435, #14000). Targets the UDID rather than the
+        # device name — name matching failed on this image even for a device
+        # simctl reported as available.
         run: |
           set -euo pipefail
-          DEVICE=$(xcrun simctl list devices available -j | python3 -c '
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
           import json, re, sys
           data = json.load(sys.stdin)["devices"]
           best = ""
@@ -196,19 +196,25 @@ jobs:
                   continue
               for device in devices:
                   if device.get("isAvailable") and "iPhone" in device.get("name", ""):
-                      best = device["name"]
+                      best = device["udid"] + "\t" + device["name"]
           print(best)
           ')
-          if [ -z "$DEVICE" ]; then
+          if [ -z "$UDID" ]; then
             echo "::warning::No iOS 26+ iPhone simulator on this runner; skipping tests. Installed runtimes:"
             xcrun simctl list runtimes
             exit 0
           fi
-          echo "Testing on: $DEVICE"
+          echo "Testing on: $UDID"
+          ID=$(echo "$UDID" | cut -f1)
           set -o pipefail
           xcodebuild test \
             -project StudyTimer.xcodeproj \
             -scheme StudyTimer \
-            -destination "platform=iOS Simulator,name=$DEVICE" \
+            -destination "platform=iOS Simulator,id=$ID" \
             CODE_SIGNING_ALLOWED=NO \
-            | xcbeautify --renderer github-actions
+            2>&1 | tee "$RUNNER_TEMP/test.log" | xcbeautify --renderer github-actions || {
+              echo "::group::Raw xcodebuild diagnostics"
+              grep -E "error:|note:|failed" "$RUNNER_TEMP/test.log" | head -80 || true
+              echo "::endgroup::"
+              exit 1
+            }
