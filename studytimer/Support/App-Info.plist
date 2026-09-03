@@ -16,6 +16,11 @@
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<!-- Without this the home screen shows a blank placeholder even when the asset
+	     catalog does contain an icon. GENERATE_INFOPLIST_FILE is off, so Xcode
+	     isn't injecting it for us. -->
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>

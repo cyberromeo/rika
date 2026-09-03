@@ -1,16 +1,26 @@
 // Base.xcconfig — build settings shared by every target and configuration.
 //
-// Matches the convention already used by the sibling ios/ project: secrets live
-// in Config/Secrets.xcconfig, which is gitignored, and are pulled in with the
-// `#include?` form. The question mark means a missing file is *not* a build
-// error — so a fresh clone and CI both compile with no copy step, and the app
-// simply reports "medx sync: not configured".
-#include? "Secrets.xcconfig"
+// Defaults are declared here; Config/Secrets.xcconfig is gitignored and included
+// at the *bottom* so anything it sets wins. The `#include?` form (with the
+// question mark) means a missing file is not a build error, so a fresh clone and
+// CI both compile with no copy step.
 
 // ── Endpoints ───────────────────────────────────────────────────────────────
 // Not secret, so they live here. xcconfig treats // as a comment, hence SLASH.
 SLASH = /
 MEDX_BASE_URL = https:$(SLASH)$(SLASH)medx.srihari.quest
+
+// The medx credential is deliberately NOT defaulted here — this repo is public,
+// and a third copy of it in tracked source is a third place to have to rotate.
+// It arrives one of two ways, both of which land in Config/Secrets.xcconfig
+// (gitignored) and are picked up by the #include? at the bottom of this file:
+//
+//   · locally — cp Config/Secrets.example.xcconfig Config/Secrets.xcconfig
+//   · in CI    — written from the MEDX_PASSWORD repository secret
+//
+// With neither present the app runs fully offline and Settings reports
+// "medx sync: not configured".
+MEDX_PASSWORD =
 
 // ── App group ───────────────────────────────────────────────────────────────
 // Shared container between the app and its five extensions. Must match
@@ -26,3 +36,7 @@ IPHONEOS_DEPLOYMENT_TARGET = 26.0
 TARGETED_DEVICE_FAMILY = 1
 SWIFT_TREAT_WARNINGS_AS_ERRORS = NO
 GCC_TREAT_WARNINGS_AS_ERRORS = NO
+
+// ── Local overrides ─────────────────────────────────────────────────────────
+// Last, so anything in Secrets.xcconfig beats the defaults above.
+#include? "Secrets.xcconfig"

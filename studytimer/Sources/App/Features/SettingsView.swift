@@ -20,6 +20,7 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 screenTimeSection
+                liveActivitySection
                 alertsSection
                 syncSection
                 recoverySection
@@ -53,6 +54,33 @@ struct SettingsView: View {
             Text(auth.isAuthorized
                  ? "Revoking also clears any active block. Not available mid-session."
                  : "Without this, sessions still run — they just can't block anything.")
+        }
+    }
+
+    /// Diagnostics, not preferences. A Live Activity that never appears looks
+    /// identical to a broken app from the outside, and both common causes — the
+    /// system setting being off, and a sideloaded build whose widget extension
+    /// didn't get valid provisioning — are otherwise invisible.
+    private var liveActivitySection: some View {
+        Section {
+            LabeledContent("System setting") {
+                Text(engine.liveActivity.areActivitiesEnabled ? "Enabled" : "Disabled")
+                    .foregroundStyle(engine.liveActivity.areActivitiesEnabled ? Theme.green : Theme.amber)
+            }
+            LabeledContent("Started this launch") {
+                Text(engine.liveActivity.didStartSuccessfully ? "Yes" : "Not yet")
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            if let diagnostic = engine.liveActivity.diagnostic {
+                Text(diagnostic)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.amber)
+                    .textSelection(.enabled)
+            }
+        } header: {
+            Text("Live Activity")
+        } footer: {
+            Text("Sideloaded builds signed with a free Apple ID often can't load app extensions, which is the usual reason the Lock Screen countdown doesn't appear even when the setting is on.")
         }
     }
 

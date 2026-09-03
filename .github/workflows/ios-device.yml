@@ -74,6 +74,19 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen xcbeautify
 
+      - name: Write medx credential
+        # Same as the unsigned job: absent, the .ipa builds fine and simply doesn't
+        # sync. Set it with `gh secret set MEDX_PASSWORD`.
+        env:
+          MEDX_PASSWORD: ${{ secrets.MEDX_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -n "${MEDX_PASSWORD:-}" ]; then
+            printf 'MEDX_PASSWORD = %s\n' "$MEDX_PASSWORD" > Config/Secrets.xcconfig
+          else
+            echo "::warning::MEDX_PASSWORD secret not set — this .ipa will not sync to medx."
+          fi
+
       - name: Write App Store Connect API key
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}

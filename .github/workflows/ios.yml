@@ -99,6 +99,22 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen xcbeautify
 
+      - name: Write medx credential
+        # Without this the artifact ships with an empty password and silently
+        # doesn't sync — which is exactly how the first build shipped. Set it with
+        #   gh secret set MEDX_PASSWORD
+        # Absent, the app still builds and just reports "not configured".
+        env:
+          MEDX_PASSWORD: ${{ secrets.MEDX_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -n "${MEDX_PASSWORD:-}" ]; then
+            printf 'MEDX_PASSWORD = %s\n' "$MEDX_PASSWORD" > Config/Secrets.xcconfig
+            echo "medx sync enabled for this build"
+          else
+            echo "::warning::MEDX_PASSWORD secret not set — this .ipa will not sync to medx."
+          fi
+
       - name: Generate project
         run: xcodegen generate --spec project.yml
 

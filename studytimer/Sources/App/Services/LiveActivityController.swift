@@ -1,5 +1,6 @@
 import ActivityKit
 import Foundation
+import Observation
 
 /// Owns the Live Activity on the Lock Screen and in the Dynamic Island.
 ///
@@ -8,16 +9,40 @@ import Foundation
 /// every tick on its own — so an Activity is only touched four times in a session's
 /// life: request, pause, resume, end. No polling, no per-second pushes, and no risk
 /// of running into ActivityKit's update budget.
+///
+/// Failures are recorded rather than swallowed. A Live Activity that silently never
+/// appears is indistinguishable from a broken app, and the two most common causes —
+/// the user disabling Live Activities for this app, and a sideloaded build whose
+/// widget extension didn't get valid provisioning — are both invisible from inside
+/// the app unless the error is surfaced.
 @MainActor
+@Observable
 final class LiveActivityController {
     private var activity: Activity<FocusActivityAttributes>?
 
-    private var isAvailable: Bool {
+    /// Last `Activity.request` failure, verbatim, for the Settings diagnostics row.
+    private(set) var lastError: String?
+    /// Whether a request has ever succeeded this launch.
+    private(set) var didStartSuccessfully = false
+
+    /// False when the user has turned Live Activities off for this app in Settings.
+    var areActivitiesEnabled: Bool {
         ActivityAuthorizationInfo().areActivitiesEnabled
     }
 
+    /// Non-nil when something is stopping the Live Activity from appearing.
+    var diagnostic: String? {
+        if !areActivitiesEnabled {
+            return "Live Activities are turned off for Lock In. Settings › Lock In › Live Activities."
+        }
+        return lastError
+    }
+
     func start(session: Session, blockedCount: Int) async {
-        guard isAvailable else { return }
+        guard areActivitiesEnabled else {
+            lastError = nil  // not an error — a setting
+            return
+        }
         await end(session: session, immediately: true)
 
         let attributes = FocusActivityAttributes(
@@ -39,8 +64,11 @@ final class LiveActivityController {
                 ),
                 pushType: nil
             )
+            lastError = nil
+            didStartSuccessfully = true
         } catch {
             activity = nil
+            lastError = "\(error)"
         }
     }
 

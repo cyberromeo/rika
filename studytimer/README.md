@@ -27,6 +27,17 @@ For medx sync, `cp Config/Secrets.example.xcconfig Config/Secrets.xcconfig` and 
 in the password. `Base.xcconfig` includes it with `#include?`, so skipping this step
 isn't a build error — the app just runs offline.
 
+**CI builds need the same value as a repository secret**, or the artifact ships with
+an empty credential and silently doesn't sync:
+
+```
+gh secret set MEDX_PASSWORD
+```
+
+It's deliberately not defaulted in tracked config — this repo is public, and a third
+copy of that credential is a third place to rotate it. The workflows warn when the
+secret is absent rather than failing.
+
 CI builds every push on a `macos-26` runner
 ([`.github/workflows/ios.yml`](../.github/workflows/ios.yml)) — that's the compile
 check for this project, since it's developed from Windows.

@@ -41,7 +41,7 @@ final class SessionEngine {
 
     private var completionTask: Task<Void, Never>?
     private let history: HistoryStore
-    private let liveActivity = LiveActivityController()
+    let liveActivity = LiveActivityController()
     private let notifications = NotificationScheduler()
     private let sync: SyncCoordinator
 
