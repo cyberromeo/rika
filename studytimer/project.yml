@@ -130,6 +130,7 @@ targets:
       - path: Sources/Report
       - path: Sources/Shared/Core
       - path: Sources/Shared/ScreenTime
+      - path: Sources/Shared/ReportUI
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: quest.srihari.studytimer.report

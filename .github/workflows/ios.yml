@@ -171,25 +171,28 @@ jobs:
         run: xcodegen generate --spec project.yml
 
       - name: Run tests
-        # Tests need a real simulator, and iOS 26 runtimes come and go on this image.
-        # Discover one rather than hardcoding a device name; report clearly instead of
-        # failing opaquely if the image has none.
+        # Tests need a simulator whose runtime is at least the deployment target
+        # (iOS 26), and those runtimes come and go on this image
+        # (actions/runner-images#13435, #14000). Discover one rather than
+        # hardcoding a device name, and skip with a clear message instead of
+        # failing opaquely when the image has nothing suitable.
         run: |
           set -euo pipefail
           DEVICE=$(xcrun simctl list devices available -j | python3 -c '
-          import json, sys
+          import json, re, sys
           data = json.load(sys.stdin)["devices"]
-          found = ""
+          best = ""
           for runtime, devices in data.items():
-              if "iOS" not in runtime:
+              match = re.search(r"iOS-(\d+)", runtime)
+              if not match or int(match.group(1)) < 26:
                   continue
               for device in devices:
                   if device.get("isAvailable") and "iPhone" in device.get("name", ""):
-                      found = device["name"]
-          print(found)
+                      best = device["name"]
+          print(best)
           ')
           if [ -z "$DEVICE" ]; then
-            echo "::warning::No iPhone simulator on this runner; skipping tests."
+            echo "::warning::No iOS 26+ iPhone simulator on this runner; skipping tests. Installed runtimes:"
             xcrun simctl list runtimes
             exit 0
           fi
