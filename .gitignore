@@ -1,33 +1,16 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
 node_modules
 dist
-dist-ssr
 *.local
 .env
 .env.*
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+!.env.example
+.vercel
+*.log
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+.idea
+.vscode/*
 
-# iOS (studytimer/)
-# The .xcodeproj is generated from project.yml by XcodeGen — never commit it, or
-# it becomes a second source of truth that silently diverges.
+# iOS (studytimer/) — the .xcodeproj is generated from project.yml by XcodeGen
 studytimer/*.xcodeproj
 studytimer/*.xcworkspace
 studytimer/Config/Secrets.xcconfig

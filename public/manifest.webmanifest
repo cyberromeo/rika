@@ -1,0 +1,12 @@
+{
+  "name": "Rika",
+  "short_name": "Rika",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f1f8",
+  "theme_color": "#f3f1f8",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
